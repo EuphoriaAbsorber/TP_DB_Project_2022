@@ -4,9 +4,61 @@ definitions:
     properties:
       error: {}
     type: object
+  model.Forum:
+    properties:
+      posts:
+        type: integer
+      slug:
+        type: string
+      threads:
+        type: integer
+      title:
+        type: string
+      user:
+        type: string
+    type: object
+  model.ForumCreateModel:
+    properties:
+      slug:
+        type: string
+      title:
+        type: string
+      user:
+        type: string
+    type: object
   model.Response:
     properties:
       body: {}
+    type: object
+  model.Thread:
+    properties:
+      author:
+        type: string
+      created:
+        type: string
+      forum:
+        type: string
+      id:
+        type: integer
+      message:
+        type: string
+      slug:
+        type: string
+      title:
+        type: string
+      votes:
+        type: integer
+    type: object
+  model.ThreadCreateModel:
+    properties:
+      author:
+        type: string
+      created:
+        type: string
+      message:
+        type: string
+      title:
+        type: string
     type: object
   model.User:
     properties:
@@ -33,6 +85,118 @@ info:
   title: DB project API
   version: "1.0"
 paths:
+  /forum/{slug}/create:
+    post:
+      consumes:
+      - application/json
+      description: creates thread
+      operationId: CreateThread
+      parameters:
+      - description: slug of thread
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Thread params
+        in: body
+        name: thread
+        required: true
+        schema:
+          $ref: '#/definitions/model.ThreadCreateModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Thread'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.Thread'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: creates thread
+      tags:
+      - Forum
+  /forum/{slug}/details:
+    get:
+      consumes:
+      - application/json
+      description: Gets forum info
+      operationId: GetForumInfo
+      parameters:
+      - description: slug of user
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Forum'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Gets forum info
+      tags:
+      - Forum
+  /forum/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates Forum
+      operationId: CreateForum
+      parameters:
+      - description: Forum params
+        in: body
+        name: forum
+        required: true
+        schema:
+          $ref: '#/definitions/model.ForumCreateModel'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad request - Problem with the request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "409":
+          description: Conflict - User already exists
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Creates Forum
+      tags:
+      - Forum
   /user/{nickname}/create:
     post:
       consumes:
@@ -92,7 +256,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Response'
+            $ref: '#/definitions/model.User'
         "404":
           description: Not found - Requested entity is not found in database
           schema:

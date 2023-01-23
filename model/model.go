@@ -11,10 +11,10 @@ type Response struct {
 }
 
 type Status struct {
-	User   int32 `json:"user"`
-	Forum  int32 `json:"forum"`
-	Thread int32 `json:"thread"`
-	Post   int64 `json:"post"`
+	User   int `json:"user"`
+	Forum  int `json:"forum"`
+	Thread int `json:"thread"`
+	Post   int `json:"post"`
 }
 
 type User struct {
@@ -34,23 +34,36 @@ type UserUpdate struct {
 	Email    string `json:"email,omitempty"`
 }
 
+type ForumCreateModel struct {
+	Title string `json:"title"`
+	User  string `json:"user"`
+	Slug  string `json:"slug"`
+}
+
 type Forum struct {
 	Title   string `json:"title"`
 	User    string `json:"user"`
 	Slug    string `json:"slug"`
-	Posts   int64  `json:"posts,omitempty"`
-	Threads int32  `json:"threads,omitempty"`
+	Posts   int    `json:"posts"`
+	Threads int    `json:"threads"`
 }
 
 type Thread struct {
-	Id      int32     `json:"id,omitempty"`
+	Id      int       `json:"id"`
 	Title   string    `json:"title"`
 	Author  string    `json:"author"`
-	Forum   string    `json:"forum,omitempty"`
+	Forum   string    `json:"forum"`
 	Message string    `json:"message"`
-	Votes   int32     `json:"votes,omitempty"`
-	Slug    string    `json:"slug,omitempty"`
+	Votes   int       `json:"votes"`
+	Slug    string    `json:"slug"`
 	Created time.Time `json:"created"`
+}
+
+type ThreadCreateModel struct {
+	Title   string    `json:"title"`
+	Author  string    `json:"author"`
+	Message string    `json:"message"`
+	Created time.Time `json:"created,omitempty"`
 }
 
 type Threads struct {
@@ -63,13 +76,13 @@ type ThreadUpdate struct {
 }
 
 type Post struct {
-	Id       int64     `json:"id,omitempty"`
-	Parent   int64     `json:"parent,omitempty"`
+	Id       int       `json:"id,omitempty"`
+	Parent   int       `json:"parent,omitempty"`
 	Author   string    `json:"author"`
 	Message  string    `json:"message"`
 	IsEdited bool      `json:"isedited"`
 	Forum    string    `json:"forum,omitempty"`
-	Thread   int32     `json:"thread,omitempty"`
+	Thread   int       `json:"thread,omitempty"`
 	Created  time.Time `json:"created"`
 }
 
@@ -90,5 +103,5 @@ type PostFull struct {
 
 type Vote struct {
 	Nickname string `json:"nickname"`
-	Voice    int32  `json:"voice"`
+	Voice    int    `json:"voice"`
 }

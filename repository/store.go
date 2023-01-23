@@ -81,14 +81,14 @@ func (s *Store) ChangeProfile(in *model.User) error {
 }
 
 func (s *Store) CreateForum(in *model.Forum) error {
-	_, err := s.db.Exec(context.Background(), `INSERT INTO forums (title, user, slug) VALUES ($1, $2, $3);`, in.Title, in.User, in.Slug)
+	_, err := s.db.Exec(context.Background(), `INSERT INTO forums (title, user1, slug) VALUES ($1, $2, $3);`, in.Title, in.User, in.Slug)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, user, slug, posts, threads FROM forums WHERE user = $1;`, nickname)
+	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE user1 = $1;`, nickname)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
 }
 
 func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, user, slug, posts, threads FROM forums WHERE slug = $1;`, slug)
+	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE slug = $1;`, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
 }
 
 func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND author = $2 AND message = $3 AND created = $4;`, in.Title, in.Author, in.Message, in.Created)
+	rows, err := s.db.Query(context.Background(), `SELECT title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND author = $2 AND message = $3;`, in.Title, in.Author, in.Message)
 	if err != nil {
 		return nil, err
 	}
