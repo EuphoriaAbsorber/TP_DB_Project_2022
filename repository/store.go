@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"dbproject/model"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -12,6 +13,11 @@ type StoreInterface interface {
 	GetUsersByUsermodel(in *model.User) ([]*model.User, error)
 	GetProfile(nickname string) (*model.User, error)
 	ChangeProfile(in *model.User) error
+	CreateForum(in *model.Forum) error
+	GetForumByUsername(nickname string) (*model.Forum, error)
+	GetForumBySlug(slug string) (*model.Forum, error)
+	GetThreadByModel(in *model.Thread) (*model.Thread, error)
+	CreateThreadByModel(in *model.Thread) (*model.Thread, error)
 }
 
 type Store struct {
@@ -72,4 +78,72 @@ func (s *Store) ChangeProfile(in *model.User) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Store) CreateForum(in *model.Forum) error {
+	_, err := s.db.Exec(context.Background(), `INSERT INTO forums (title, user, slug) VALUES ($1, $2, $3);`, in.Title, in.User, in.Slug)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
+	rows, err := s.db.Query(context.Background(), `SELECT title, user, slug, posts, threads FROM forums WHERE user = $1;`, nickname)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.Forum{}
+		err := rows.Scan(&dat.Title, &dat.User, &dat.Slug, &dat.Posts, &dat.Threads)
+		if err != nil {
+			return nil, err
+		}
+		return &dat, nil
+	}
+	return nil, model.ErrNotFound404
+}
+
+func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
+	rows, err := s.db.Query(context.Background(), `SELECT title, user, slug, posts, threads FROM forums WHERE slug = $1;`, slug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.Forum{}
+		err := rows.Scan(&dat.Title, &dat.User, &dat.Slug, &dat.Posts, &dat.Threads)
+		if err != nil {
+			return nil, err
+		}
+		return &dat, nil
+	}
+	return nil, model.ErrNotFound404
+}
+
+func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
+	rows, err := s.db.Query(context.Background(), `SELECT title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND author = $2 AND message = $3 AND created = $4;`, in.Title, in.Author, in.Message, in.Created)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.Thread{}
+		err := rows.Scan(&dat.Title, &dat.Author, &dat.Forum, &dat.Message, &dat.Votes, &dat.Slug, &dat.Created)
+		if err != nil {
+			return nil, err
+		}
+		return &dat, nil
+	}
+	return nil, model.ErrNotFound404
+}
+
+func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
+	createTime := time.Now()
+	_, err := s.db.Exec(context.Background(), `INSERT INTO threads (title, author, forum, message, votes, slug, created) VALUES ($1, $2, $3, $4, $5, $6, $7);`, in.Title, in.Author, in.Forum, in.Message, 0, in.Slug, createTime.Format("2006.01.02 15:04:05"))
+	if err != nil {
+		return nil, err
+	}
+	in.Created = createTime
+	return in, nil
 }

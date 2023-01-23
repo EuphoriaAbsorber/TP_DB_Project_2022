@@ -48,10 +48,15 @@ func main() {
 	usecase := usecase.NewUsecase(store)
 
 	handler := deliv.NewHandler(usecase)
-
+	//user
 	myRouter.HandleFunc(conf.PathCreateUser, handler.CreateUser).Methods(http.MethodPost)
 	myRouter.HandleFunc(conf.PathProfile, handler.GetProfile).Methods(http.MethodGet)
 	myRouter.HandleFunc(conf.PathProfile, handler.PostProfile).Methods(http.MethodPost)
+
+	//forum
+	myRouter.HandleFunc(conf.PathCreateForum, handler.CreateForum).Methods(http.MethodPost)
+	myRouter.HandleFunc(conf.PathForumInfo, handler.GetForumInfo).Methods(http.MethodGet)
+	myRouter.HandleFunc(conf.PathCreateThread, handler.CreateThread).Methods(http.MethodPost)
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 

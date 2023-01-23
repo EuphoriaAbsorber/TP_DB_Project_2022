@@ -8,74 +8,71 @@ import (
 	"strings"
 )
 
-// CreateUser godoc
-// @Summary Creates User
-// @Description Creates User
-// @ID CreateUser
+// CreateForum godoc
+// @Summary Creates Forum
+// @Description Creates Forum
+// @ID CreateForum
 // @Accept  json
 // @Produce  json
-// @Tags User
-// @Param nickname path string true "nickname of user"
-// @Param user body model.User true "User params"
+// @Tags UserForumUser params"
 // @Success 201 {object} model.Response "OK"
 // @Failure 400 {object} model.Error "Bad request - Problem with the request"
+// @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
 // @Failure 409 {object} model.Error "Conflict - User already exists"
 // @Failure 500 {object} model.Error "Internal Server Error - Request is valid but operation failed at server side"
-// @Router /user/{nickname}/create [post]
-func (api *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	s := strings.Split(r.URL.Path, "/")
-	nickname := s[len(s)-2]
+// @Router /forum/create [post]
+func (api *Handler) CreateForum(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-	var req model.User
+	var req model.Forum
 	err := decoder.Decode(&req)
 	if err != nil {
 		log.Println("error: ", err)
 		ReturnErrorJSON(w, model.ErrBadRequest400, 400)
 		return
 	}
-	req.Nickname = nickname
-
-	users, err := api.usecase.GetUsersByUsermodel(&req)
+	forum, err := api.usecase.GetForumByUsername(req.User)
+	if err == model.ErrNotFound404 {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrNotFound404, 404)
+		return
+	}
 	if err != nil {
-		log.Println("get GetUserByUsermodel ", err)
+		log.Println(err)
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
-
-	if len(users) > 0 {
+	if forum != nil {
 		w.WriteHeader(409)
-		json.NewEncoder(w).Encode(&users)
+		json.NewEncoder(w).Encode(&forum)
 		return
 	}
-
-	err = api.usecase.CreateUser(&req)
+	err = api.usecase.CreateForum(&req)
 	if err != nil {
 		log.Println("db err: ", err)
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
-
 	w.WriteHeader(201)
 	json.NewEncoder(w).Encode(&req)
 }
 
-// GetProfile godoc
-// @Summary Gets Users profile
-// @Description Gets Users profile
-// @ID GetProfile
+// GetForumInfo godoc
+// @Summary Gets forum info
+// @Description Gets forum info
+// @ID GetForumInfo
 // @Accept  json
 // @Produce  json
 // @Tags User
-// @Param nickname path string true "nickname of user"
-// @Success 200 {object} model.User
+// @Param slug path string true "slug of user"
+// @Success 200 {object} model.Forum
 // @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
 // @Failure 500 {object} model.Error "Internal Server Error - Request is valid but operation failed at server side"
-// @Router /user/{nickname}/profile [get]
-func (api *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
+// @Router /forum/{slug}/details [get]
+func (api *Handler) GetForumInfo(w http.ResponseWriter, r *http.Request) {
 	s := strings.Split(r.URL.Path, "/")
-	nickname := s[len(s)-2]
+	slug := s[len(s)-2]
 
-	user, err := api.usecase.GetProfile(nickname)
+	forum, err := api.usecase.GetForumBySlug(slug)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -88,38 +85,37 @@ func (api *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(&user)
+	json.NewEncoder(w).Encode(&forum)
 }
 
-// PostProfile godoc
-// @Summary Changes Users profile
-// @Description Changes Users profile
-// @ID PostProfile
+// CreateThread godoc
+// @Summary creates thread
+// @Description creates thread
+// @ID CreateThread
 // @Accept  json
 // @Produce  json
 // @Tags User
-// @Param nickname path string true "nickname of user"
-// @Param user body model.User true "User params"
-// @Success 200 {object} model.Response "OK"
+// @Param slug path string true "slug of user"
+// @Success 201 {object} model.Thread
 // @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
-// @Failure 409 {object} model.Error "Conflict - User already exists"
+// @Failure 409 {object} model.Thread
 // @Failure 500 {object} model.Error "Internal Server Error - Request is valid but operation failed at server side"
-// @Router /user/{nickname}/profile [post]
-func (api *Handler) PostProfile(w http.ResponseWriter, r *http.Request) {
+// @Router /forum/{slug}/create [post]
+func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 	s := strings.Split(r.URL.Path, "/")
-	nickname := s[len(s)-2]
-
+	slug := s[len(s)-2]
+	var req model.Thread
 	decoder := json.NewDecoder(r.Body)
-	var req model.User
 	err := decoder.Decode(&req)
 	if err != nil {
 		log.Println("error: ", err)
 		ReturnErrorJSON(w, model.ErrBadRequest400, 400)
 		return
 	}
-	req.Nickname = nickname
+	req.Slug = slug
+	req.Votes = 0
 
-	user, err := api.usecase.GetProfile(nickname)
+	forum, err := api.usecase.GetForumBySlug(slug)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -131,35 +127,37 @@ func (api *Handler) PostProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Email != user.Email {
-		users, err := api.usecase.GetUsersByUsermodel(&model.User{Email: req.Email, Nickname: ""})
-		if err != nil {
-			log.Println(err)
-			ReturnErrorJSON(w, model.ErrServerError500, 500)
-			return
-		}
+	req.Forum = forum.Title
 
-		if len(users) > 0 {
-			ReturnErrorJSON(w, model.ErrConflict409, 409)
-			return
-		}
+	_, err = api.usecase.GetProfile(req.Author)
+	if err == model.ErrNotFound404 {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrNotFound404, 404)
+		return
 	}
-	if req.Email == "" {
-		req.Email = user.Email
-	}
-	if req.Fullname == "" {
-		req.Fullname = user.Fullname
-	}
-	if req.About == "" {
-		req.About = user.About
-	}
-	err = api.usecase.ChangeProfile(&req)
 	if err != nil {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
 
-	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(&req)
+	thread, err := api.usecase.GetThreadByModel(&req)
+	if err != nil {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrServerError500, 500)
+		return
+	}
+	if thread != nil {
+		w.WriteHeader(409)
+		json.NewEncoder(w).Encode(&thread)
+		return
+	}
+	thread, err = api.usecase.CreateThreadByModel(&req)
+	if err != nil {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrServerError500, 500)
+		return
+	}
+	w.WriteHeader(201)
+	json.NewEncoder(w).Encode(&thread)
 }
