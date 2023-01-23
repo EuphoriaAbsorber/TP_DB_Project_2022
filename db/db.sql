@@ -29,7 +29,7 @@ CREATE UNLOGGED TABLE posts (
     parent  INT,
     author VARCHAR (40) NOT NULL REFERENCES users (nickname) ON DELETE CASCADE,
     message VARCHAR (400) NOT NULL,
-    forum VARCHAR (80) NOT NULL REFERENCES forums (slug) ON DELETE CASCADE,
+    forum VARCHAR (100) NOT NULL REFERENCES forums (slug) ON DELETE CASCADE,
     isedited BOOLEAN,
     thread INT REFERENCES threads (id) ON DELETE CASCADE,
     created TIMESTAMP

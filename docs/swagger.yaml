@@ -157,6 +157,49 @@ paths:
       summary: Gets forum info
       tags:
       - Forum
+  /forum/{slug}/users:
+    get:
+      consumes:
+      - application/json
+      description: Gets forum users
+      operationId: GetForumUsers
+      parameters:
+      - description: slug of user
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      - description: since
+        in: query
+        name: since
+        type: string
+      - description: desc
+        in: query
+        name: desc
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Forum'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Gets forum users
+      tags:
+      - Forum
   /forum/create:
     post:
       consumes:

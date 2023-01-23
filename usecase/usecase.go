@@ -15,6 +15,7 @@ type UsecaseInterface interface {
 	GetForumBySlug(slug string) (*model.Forum, error)
 	GetThreadByModel(params *model.Thread) (*model.Thread, error)
 	CreateThreadByModel(params *model.Thread) (*model.Thread, error)
+	GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error)
 }
 
 type Usecase struct {
@@ -53,4 +54,7 @@ func (api *Usecase) GetThreadByModel(params *model.Thread) (*model.Thread, error
 }
 func (api *Usecase) CreateThreadByModel(params *model.Thread) (*model.Thread, error) {
 	return api.store.CreateThreadByModel(params)
+}
+func (api *Usecase) GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error) {
+	return api.store.GetForumUsers(slug, limit, since, desc)
 }

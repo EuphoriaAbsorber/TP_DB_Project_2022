@@ -57,6 +57,7 @@ func main() {
 	myRouter.HandleFunc(conf.PathCreateForum, handler.CreateForum).Methods(http.MethodPost)
 	myRouter.HandleFunc(conf.PathForumInfo, handler.GetForumInfo).Methods(http.MethodGet)
 	myRouter.HandleFunc(conf.PathCreateThread, handler.CreateThread).Methods(http.MethodPost)
+	myRouter.HandleFunc(conf.PathGetForumUsers, handler.GetForumUsers).Methods(http.MethodGet)
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 

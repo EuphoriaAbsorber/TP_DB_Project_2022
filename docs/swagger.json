@@ -182,6 +182,69 @@
                 }
             }
         },
+        "/forum/{slug}/users": {
+            "get": {
+                "description": "Gets forum users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Forum"
+                ],
+                "summary": "Gets forum users",
+                "operationId": "GetForumUsers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "slug of user",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "since",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "desc",
+                        "name": "desc",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Forum"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{nickname}/create": {
             "post": {
                 "description": "Creates User",

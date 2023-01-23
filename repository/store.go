@@ -18,6 +18,7 @@ type StoreInterface interface {
 	GetForumBySlug(slug string) (*model.Forum, error)
 	GetThreadByModel(in *model.Thread) (*model.Thread, error)
 	CreateThreadByModel(in *model.Thread) (*model.Thread, error)
+	GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error)
 }
 
 type Store struct {
@@ -146,4 +147,33 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 	}
 	in.Created = createTime
 	return in, nil
+}
+
+func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error) {
+	users := []*model.User{}
+	rows, err := s.db.Query(context.Background(), `SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
+		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON users.nickname=threads.author WHERE threads.forum = $1) AS U WHERE U.nickname > $2 ORDER BY U.nickname LIMIT $3;`, slug, since, limit)
+	if err != nil {
+		return nil, err
+	}
+	if desc {
+		if since == "" {
+			since = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя"
+		}
+		rows, err = s.db.Query(context.Background(), `SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
+			UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON users.nickname=threads.author WHERE threads.forum = $1) AS U WHERE U.nickname < $2 ORDER BY U.nickname DESC LIMIT $3;`, slug, since, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.User{}
+		err := rows.Scan(&dat.Email, &dat.Fullname, &dat.Nickname, &dat.About)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, &dat)
+	}
+	return users, nil
 }
