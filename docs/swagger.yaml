@@ -74,4 +74,75 @@ paths:
       summary: Creates User
       tags:
       - User
+  /user/{nickname}/profile:
+    get:
+      consumes:
+      - application/json
+      description: Gets Users profile
+      operationId: GetProfile
+      parameters:
+      - description: nickname of user
+        in: path
+        name: nickname
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Gets Users profile
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      description: Changes Users profile
+      operationId: PostProfile
+      parameters:
+      - description: nickname of user
+        in: path
+        name: nickname
+        required: true
+        type: string
+      - description: User params
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "409":
+          description: Conflict - User already exists
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Changes Users profile
+      tags:
+      - User
 swagger: "2.0"

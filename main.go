@@ -50,6 +50,8 @@ func main() {
 	handler := deliv.NewHandler(usecase)
 
 	myRouter.HandleFunc(conf.PathCreateUser, handler.CreateUser).Methods(http.MethodPost)
+	myRouter.HandleFunc(conf.PathProfile, handler.GetProfile).Methods(http.MethodGet)
+	myRouter.HandleFunc(conf.PathProfile, handler.PostProfile).Methods(http.MethodPost)
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 

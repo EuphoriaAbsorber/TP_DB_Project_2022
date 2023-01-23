@@ -10,6 +10,8 @@ import (
 type StoreInterface interface {
 	CreateUser(params *model.User) error
 	GetUsersByUsermodel(in *model.User) ([]*model.User, error)
+	GetProfile(nickname string) (*model.User, error)
+	ChangeProfile(in *model.User) error
 }
 
 type Store struct {
@@ -45,4 +47,29 @@ func (s *Store) GetUsersByUsermodel(in *model.User) ([]*model.User, error) {
 		users = append(users, &dat)
 	}
 	return users, nil
+}
+
+func (s *Store) GetProfile(nickname string) (*model.User, error) {
+	rows, err := s.db.Query(context.Background(), `SELECT email, fullname, nickname, about FROM users WHERE nickname = $1;`, nickname)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.User{}
+		err := rows.Scan(&dat.Email, &dat.Fullname, &dat.Nickname, &dat.About)
+		if err != nil {
+			return nil, err
+		}
+		return &dat, nil
+	}
+	return nil, model.ErrNotFound404
+}
+
+func (s *Store) ChangeProfile(in *model.User) error {
+	_, err := s.db.Exec(context.Background(), `UPDATE users SET email = $1, fullname = $2, about = $3 WHERE nickname = $4;`, in.Email, in.Fullname, in.About, in.Nickname)
+	if err != nil {
+		return err
+	}
+	return nil
 }
