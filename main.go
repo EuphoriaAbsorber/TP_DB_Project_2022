@@ -31,7 +31,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	myRouter := mux.NewRouter()
-	urlDB := "postgres://" + conf.DBSPuser + ":" + conf.DBPassword + "@" + conf.DBHost + ":" + conf.DBPort + "/" + conf.DBName
+	//urlDB := "postgres://" + conf.DBSPuser + ":" + conf.DBPassword + "@" + conf.DBHost + ":" + conf.DBPort + "/" + conf.DBName
+	urlDB := "postgres://art:12345@localhost:5432/dbproject_base"
 	config, _ := pgxpool.ParseConfig(urlDB)
 	config.MaxConns = 120
 	db, err := pgxpool.New(context.Background(), config.ConnString())

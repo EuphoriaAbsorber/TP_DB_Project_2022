@@ -52,7 +52,7 @@ func (s *Store) CreateUser(in *model.User) error {
 }
 func (s *Store) GetUsersByUsermodel(in *model.User) ([]*model.User, error) {
 	users := []*model.User{}
-	rows, err := s.db.Query(context.Background(), `SELECT email, fullname, nickname, about FROM users WHERE email = $1 OR nickname = $2;`, in.Email, in.Nickname)
+	rows, err := s.db.Query(context.Background(), `SELECT email, fullname, nickname, about FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(nickname) = LOWER($2);`, in.Email, in.Nickname)
 	if err != nil {
 		return nil, err
 	}

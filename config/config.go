@@ -1,6 +1,6 @@
 package Config
 
-var Port = ":8080"
+var Port = ":5000"
 var BasePath = "/api"
 var PathDocs = BasePath + "/docs"
 var PathCreateUser = BasePath + "/user/{nickname}/create"
