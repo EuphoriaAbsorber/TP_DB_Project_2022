@@ -80,3 +80,34 @@ func (s *Store) UpdateThreadInfo(in *model.ThreadUpdate) error {
 	}
 	return nil
 }
+
+func (s *Store) VoteForThread(in *model.Vote, threadID int) (int, error) {
+	count := 0
+	//nameArr := make([]string, 0)
+	//nameArr = append(nameArr, in.Nickname)
+	err := s.db.QueryRow(context.Background(), `SELECT count(*) FROM (SELECT users.nickname FROM users JOIN votes on users.nickname=votes.nickname JOIN threads ON votes.thread=threads.id WHERE threads.id = $1) AS S WHERE S.nickname IN ($2);`, threadID, in.Nickname).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	if count == 0 {
+		_, err := s.db.Exec(context.Background(), `INSERT INTO votes (nickname, thread, voice) VALUES ($1, $2, $3);`, in.Nickname, threadID, in.Voice)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		_, err := s.db.Exec(context.Background(), `UPDATE votes SET voice = $1 WHERE nickname = $2 AND thread = $3;`, in.Voice, in.Nickname, threadID)
+		if err != nil {
+			return 0, err
+		}
+	}
+	newRate := 0
+	err = s.db.QueryRow(context.Background(), `SELECT sum(voice) FROM votes WHERE thread = $1;`, threadID).Scan(&newRate)
+	if err != nil {
+		return 0, err
+	}
+	_, err = s.db.Exec(context.Background(), `UPDATE threads SET votes = $1 WHERE id = $2;`, newRate, threadID)
+	if err != nil {
+		return 0, err
+	}
+	return newRate, nil
+}

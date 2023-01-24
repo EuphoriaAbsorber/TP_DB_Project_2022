@@ -638,6 +638,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/thread/{slug_or_id}/vote": {
+            "post": {
+                "description": "VoteForThread",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thread"
+                ],
+                "summary": "VoteForThread",
+                "operationId": "VoteForThread",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "slug or id of thread",
+                        "name": "slug_or_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "vote params",
+                        "name": "vote",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Vote"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Thread"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{nickname}/create": {
             "post": {
                 "description": "Creates User",
@@ -1013,6 +1067,17 @@ const docTemplate = `{
                 },
                 "nickname": {
                     "type": "string"
+                }
+            }
+        },
+        "model.Vote": {
+            "type": "object",
+            "properties": {
+                "nickname": {
+                    "type": "string"
+                },
+                "voice": {
+                    "type": "integer"
                 }
             }
         }

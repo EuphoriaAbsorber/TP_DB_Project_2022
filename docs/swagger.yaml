@@ -138,6 +138,13 @@ definitions:
       nickname:
         type: string
     type: object
+  model.Vote:
+    properties:
+      nickname:
+        type: string
+      voice:
+        type: integer
+    type: object
 host: 127.0.0.1:8080
 info:
   contact:
@@ -571,6 +578,43 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Updates thread info
+      tags:
+      - Thread
+  /thread/{slug_or_id}/vote:
+    post:
+      consumes:
+      - application/json
+      description: VoteForThread
+      operationId: VoteForThread
+      parameters:
+      - description: slug or id of thread
+        in: path
+        name: slug_or_id
+        required: true
+        type: string
+      - description: vote params
+        in: body
+        name: vote
+        required: true
+        schema:
+          $ref: '#/definitions/model.Vote'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Thread'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: VoteForThread
       tags:
       - Thread
   /user/{nickname}/create:

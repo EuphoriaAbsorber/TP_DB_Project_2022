@@ -29,6 +29,7 @@ type StoreInterface interface {
 	GetThreadBySlug(slug string) (*model.Thread, error)
 	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
 	UpdateThreadInfo(in *model.ThreadUpdate) error
+	VoteForThread(in *model.Vote, threadID int) (int, error)
 }
 
 type Store struct {
