@@ -113,6 +113,13 @@ definitions:
       title:
         type: string
     type: object
+  model.ThreadUpdate:
+    properties:
+      message:
+        type: string
+      title:
+        type: string
+    type: object
   model.Threads:
     properties:
       threads:
@@ -152,7 +159,7 @@ paths:
       description: creates thread
       operationId: CreateThread
       parameters:
-      - description: slug of thread
+      - description: slug of forum
         in: path
         name: slug
         required: true
@@ -193,7 +200,7 @@ paths:
       description: Gets forum info
       operationId: GetForumInfo
       parameters:
-      - description: slug of user
+      - description: slug of forum
         in: path
         name: slug
         required: true
@@ -497,6 +504,73 @@ paths:
           schema:
             $ref: '#/definitions/model.Error'
       summary: Creates Posts
+      tags:
+      - Thread
+  /thread/{slug_or_id}/details:
+    get:
+      consumes:
+      - application/json
+      description: Gets thread info
+      operationId: GetThreadInfo
+      parameters:
+      - description: slug or id of thread
+        in: path
+        name: slug_or_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Thread'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Gets thread info
+      tags:
+      - Thread
+    post:
+      consumes:
+      - application/json
+      description: Updates thread info
+      operationId: UpdateThreadInfo
+      parameters:
+      - description: slug or id of thread
+        in: path
+        name: slug_or_id
+        required: true
+        type: string
+      - description: ThreadUpdate params
+        in: body
+        name: threadUpdate
+        required: true
+        schema:
+          $ref: '#/definitions/model.ThreadUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Thread'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Updates thread info
       tags:
       - Thread
   /user/{nickname}/create:

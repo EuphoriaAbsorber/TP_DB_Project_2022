@@ -70,6 +70,8 @@ func main() {
 
 	//threads
 	myRouter.HandleFunc(conf.PathCreatePosts, handler.CreatePosts).Methods(http.MethodPost)
+	myRouter.HandleFunc(conf.PathThreadInfo, handler.GetThreadInfo).Methods(http.MethodGet)
+	myRouter.HandleFunc(conf.PathThreadInfo, handler.UpdateThreadInfo).Methods(http.MethodPost)
 
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 

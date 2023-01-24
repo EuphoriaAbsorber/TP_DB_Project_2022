@@ -16,6 +16,7 @@ var PathGetServiceStatus = BasePath + "/service/status"
 var PathServiceClear = BasePath + "/service/clear"
 
 var PathCreatePosts = BasePath + "/thread/{slug_or_id}/create"
+var PathThreadInfo = BasePath + "/thread/{slug_or_id}/details"
 
 var PathPost = BasePath + "/post/{id}/details"
 

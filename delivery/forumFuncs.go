@@ -73,7 +73,7 @@ func (api *Handler) CreateForum(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Tags Forum
-// @Param slug path string true "slug of user"
+// @Param slug path string true "slug of forum"
 // @Success 200 {object} model.Forum
 // @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
 // @Failure 500 {object} model.Error "Internal Server Error - Request is valid but operation failed at server side"
@@ -105,7 +105,7 @@ func (api *Handler) GetForumInfo(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Tags Forum
-// @Param slug path string true "slug of thread"
+// @Param slug path string true "slug of forum"
 // @Param thread body model.ThreadCreateModel true "Thread params"
 // @Success 201 {object} model.Thread
 // @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
@@ -203,10 +203,7 @@ func (api *Handler) GetForumUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("error: ", err)
 		limit = 1e9
-		//ReturnErrorJSON(w, model.ErrBadRequest400, 400)
-		//return
 	}
-
 	_, err = api.usecase.GetForumBySlug(slug)
 	if err == model.ErrNotFound404 {
 		log.Println(err)

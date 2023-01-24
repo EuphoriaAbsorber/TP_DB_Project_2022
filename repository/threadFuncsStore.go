@@ -72,3 +72,11 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]
 	}
 	return posts, nil
 }
+
+func (s *Store) UpdateThreadInfo(in *model.ThreadUpdate) error {
+	_, err := s.db.Exec(context.Background(), `UPDATE threads SET message = $1, title = $2;`, in.Message, in.Title)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -101,7 +101,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "slug of thread",
+                        "description": "slug of forum",
                         "name": "slug",
                         "in": "path",
                         "required": true
@@ -161,7 +161,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "slug of user",
+                        "description": "slug of forum",
                         "name": "slug",
                         "in": "path",
                         "required": true
@@ -541,6 +541,103 @@ const docTemplate = `{
                 }
             }
         },
+        "/thread/{slug_or_id}/details": {
+            "get": {
+                "description": "Gets thread info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thread"
+                ],
+                "summary": "Gets thread info",
+                "operationId": "GetThreadInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "slug or id of thread",
+                        "name": "slug_or_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Thread"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Updates thread info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thread"
+                ],
+                "summary": "Updates thread info",
+                "operationId": "UpdateThreadInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "slug or id of thread",
+                        "name": "slug_or_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ThreadUpdate params",
+                        "name": "threadUpdate",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.ThreadUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Thread"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{nickname}/create": {
             "post": {
                 "description": "Creates User",
@@ -872,6 +969,17 @@ const docTemplate = `{
                 "created": {
                     "type": "string"
                 },
+                "message": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ThreadUpdate": {
+            "type": "object",
+            "properties": {
                 "message": {
                     "type": "string"
                 },

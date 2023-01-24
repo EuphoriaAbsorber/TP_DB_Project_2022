@@ -22,7 +22,9 @@ type UsecaseInterface interface {
 	UpdatePost(id int, mes string) (*model.Post, error)
 	GetServiceStatus() (*model.Status, error)
 	ServiceClear() error
+	GetThread(id int, slug string) (*model.Thread, error)
 	CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error)
+	UpdateThreadInfo(in *model.ThreadUpdate, id int, slug string) (*model.Thread, error)
 }
 
 type Usecase struct {
@@ -80,7 +82,8 @@ func (api *Usecase) GetServiceStatus() (*model.Status, error) {
 func (api *Usecase) ServiceClear() error {
 	return api.store.ServiceClear()
 }
-func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error) {
+
+func (api *Usecase) GetThread(id int, slug string) (*model.Thread, error) {
 	var thread *model.Thread
 	var err error
 	if id == 0 {
@@ -94,7 +97,14 @@ func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.
 			return nil, err
 		}
 	}
+	return thread, nil
+}
 
+func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error) {
+	thread, err := api.GetThread(id, slug)
+	if err != nil {
+		return nil, err
+	}
 	parentPostsNumbers := make([]int, 0)
 	m := make(map[int]bool)
 	for _, post := range in.Posts {
@@ -113,4 +123,24 @@ func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.
 		return nil, err
 	}
 	return api.store.CreatePosts(in, thread.Id, thread.Forum)
+}
+
+func (api *Usecase) UpdateThreadInfo(in *model.ThreadUpdate, id int, slug string) (*model.Thread, error) {
+	thread, err := api.GetThread(id, slug)
+	if err != nil {
+		return nil, err
+	}
+	if in.Message == "" {
+		in.Message = thread.Message
+	}
+	if in.Title == "" {
+		in.Title = thread.Title
+	}
+	err = api.store.UpdateThreadInfo(in)
+	if err != nil {
+		return nil, err
+	}
+	thread.Message = in.Message
+	thread.Title = in.Title
+	return thread, nil
 }
