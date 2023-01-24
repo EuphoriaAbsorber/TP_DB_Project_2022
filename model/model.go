@@ -78,7 +78,7 @@ type Post struct {
 	Parent   int       `json:"parent"`
 	Author   string    `json:"author"`
 	Message  string    `json:"message"`
-	IsEdited bool      `json:"isedited"`
+	IsEdited bool      `json:"isEdited"`
 	Forum    string    `json:"forum,omitempty"`
 	Thread   int       `json:"thread,omitempty"`
 	Created  time.Time `json:"created"`

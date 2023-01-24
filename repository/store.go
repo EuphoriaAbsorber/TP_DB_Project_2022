@@ -149,12 +149,6 @@ func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
 		if err != nil {
 			return nil, err
 		}
-		// newRate := 0
-		// err = s.db.QueryRow(, `SELECT sum(voice) FROM votes WHERE thread = $1;`, dat.Id).Scan(&newRate)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		// dat.Votes = newRate
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
@@ -166,7 +160,7 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = s.db.Exec(`UPDATE forums SET threads = threads + 1 WHERE LOWER(slug) = LOWER($1);`, in.Slug)
+	_, err = s.db.Exec(`UPDATE forums SET threads = threads + 1 WHERE LOWER(slug) = LOWER($1);`, in.Forum)
 	if err != nil {
 		return nil, err
 	}
@@ -256,11 +250,15 @@ func (s *Store) UpdatePost(id int, mes string) (*model.Post, error) {
 	if err != nil {
 		return nil, err
 	}
+	if post.Message == mes || mes == "" {
+		return post, nil
+	}
 	_, err = s.db.Exec(`UPDATE posts SET message = $1, isedited = $2 WHERE id = $3;`, mes, true, id)
 	if err != nil {
 		return nil, err
 	}
 	post.Message = mes
+	post.IsEdited = true
 	return post, nil
 }
 

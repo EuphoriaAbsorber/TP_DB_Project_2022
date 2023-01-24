@@ -89,6 +89,7 @@ func (api *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 		answer.Forum = forum
 	}
 	if threadFlag {
+		thread, err := api.usecase.GetThread(post.Thread, "")
 		if err == model.ErrNotFound404 {
 			log.Println(err)
 			ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -99,7 +100,7 @@ func (api *Handler) GetPostById(w http.ResponseWriter, r *http.Request) {
 			ReturnErrorJSON(w, model.ErrServerError500, 500)
 			return
 		}
-		//answer.Thread = thread
+		answer.Thread = thread
 	}
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(&answer)
