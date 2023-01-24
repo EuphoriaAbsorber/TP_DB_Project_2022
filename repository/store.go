@@ -206,7 +206,7 @@ func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) (
 func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error) {
 	threads := []*model.Thread{}
 
-	rows, err := s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON threads.forum=forums.slug WHERE forums.slug = $1 AND threads.created >= $2 ORDER BY threads.created LIMIT $3;`, slug, since, limit)
+	rows, err := s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON LOWER(threads.forum)=LOWER(forums.slug) WHERE LOWER(forums.slug) = LOWER($1) AND threads.created >= $2 ORDER BY threads.created ASC LIMIT $3;`, slug, since, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bo
 				return nil, err
 			}
 		}
-		rows, err = s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON threads.forum=forums.slug WHERE forums.slug = $1 AND threads.created <= $2 ORDER BY threads.created DESC LIMIT $3;`, slug, since, limit)
+		rows, err = s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON LOWER(threads.forum)=LOWER(forums.slug) WHERE LOWER(forums.slug) = LOWER($1) AND threads.created <= $2 ORDER BY threads.created DESC LIMIT $3;`, slug, since, limit)
 	}
 	if err != nil {
 		return nil, err

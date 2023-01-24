@@ -7,10 +7,10 @@ WORKDIR /app
 RUN go build -o main main.go
 
 
-FROM ubuntu:20.04
+FROM ubuntu:latest
 RUN apt-get -y update && apt-get install -y tzdata
 
-ENV PGVER 12
+ENV PGVER 14
 RUN apt-get -y update && apt-get install -y postgresql-$PGVER
 
 USER postgres
@@ -30,3 +30,4 @@ ENV PGPASSWORD 12345
 CMD service postgresql start && psql -h localhost -d dbproject_base -U art -p 5432 -a -q -f /app/db/db.sql && /app/main
 #docker build -t art .
 #docker run -p 5000:5000 --name art -t art
+#./technopark-dbms-forum func -u http://localhost:5000/api -r report.html -k
