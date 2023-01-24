@@ -36,7 +36,7 @@ func (s *Store) GetThreadById(id int) (*model.Thread, error) {
 }
 
 func (s *Store) GetThreadBySlug(slug string) (*model.Thread, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE slug = $1;`, slug)
+	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(slug) = LOWER($1);`, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -56,25 +56,26 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]
 
 	posts := []*model.Post{}
 	createTime := time.Now()
-	for _, post := range in.Posts {
+	createdFormatted := createTime.Format(time.RFC3339)
+	for _, post := range *in {
 		id := 0
 		insertModel := model.Post{Parent: post.Parent, Author: post.Author, Message: post.Message, IsEdited: false, Thread: threadId, Forum: forumSlug, Created: createTime}
-		err := s.db.QueryRow(context.Background(), `INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createTime.Format("2006.01.02 15:04:05")).Scan(&id)
+		err := s.db.QueryRow(context.Background(), `INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id)
 		if err != nil {
 			return nil, err
 		}
 		insertModel.Id = id
 		posts = append(posts, &insertModel)
 	}
-	_, err := s.db.Exec(context.Background(), `UPDATE forums SET posts = posts + $1 WHERE slug = $2;`, len(in.Posts), forumSlug)
+	_, err := s.db.Exec(context.Background(), `UPDATE forums SET posts = posts + $1 WHERE slug = $2;`, len(*in), forumSlug)
 	if err != nil {
 		return nil, err
 	}
 	return posts, nil
 }
 
-func (s *Store) UpdateThreadInfo(in *model.ThreadUpdate) error {
-	_, err := s.db.Exec(context.Background(), `UPDATE threads SET message = $1, title = $2;`, in.Message, in.Title)
+func (s *Store) UpdateThreadInfo(in *model.ThreadUpdate, id int) error {
+	_, err := s.db.Exec(context.Background(), `UPDATE threads SET message = $1, title = $2 WHERE id = $3;`, in.Message, in.Title, id)
 	if err != nil {
 		return err
 	}

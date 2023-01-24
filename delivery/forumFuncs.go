@@ -124,10 +124,10 @@ func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 		ReturnErrorJSON(w, model.ErrBadRequest400, 400)
 		return
 	}
-	req.Forum = slug
+
 	req.Votes = 0
 
-	_, err = api.usecase.GetForumBySlug(slug)
+	forum, err := api.usecase.GetForumBySlug(slug)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -138,7 +138,7 @@ func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
-
+	req.Forum = forum.Slug
 	user, err := api.usecase.GetProfile(req.Author)
 	if err == model.ErrNotFound404 {
 		log.Println(err)

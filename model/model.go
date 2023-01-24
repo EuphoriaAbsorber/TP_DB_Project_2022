@@ -66,9 +66,7 @@ type ThreadCreateModel struct {
 	Created time.Time `json:"created,omitempty"`
 }
 
-type Threads struct {
-	Threads []*Thread `json:"threads"`
-}
+type Threads []Thread
 
 type ThreadUpdate struct {
 	Title   string `json:"title,omitempty"`
@@ -86,9 +84,7 @@ type Post struct {
 	Created  time.Time `json:"created"`
 }
 
-type Posts struct {
-	Posts []*Post `json:"posts"`
-}
+type Posts []Post
 
 type PostUpdate struct {
 	Message string `json:"message,omitempty"`

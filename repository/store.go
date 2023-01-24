@@ -28,7 +28,7 @@ type StoreInterface interface {
 	GetThreadById(id int) (*model.Thread, error)
 	GetThreadBySlug(slug string) (*model.Thread, error)
 	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
-	UpdateThreadInfo(in *model.ThreadUpdate) error
+	UpdateThreadInfo(in *model.ThreadUpdate, id int) error
 	VoteForThread(in *model.Vote, threadID int) (int, error)
 	GetThreadPosts(threadId int, limit int, since int, sort string, desc bool) ([]*model.Post, error)
 }
@@ -135,7 +135,10 @@ func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
 }
 
 func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND LOWER(author) = LOWER($2) AND message = $3;`, in.Title, in.Author, in.Message)
+	if in.Slug == "" {
+		return nil, nil
+	}
+	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(slug) = LOWER($1);`, in.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -158,11 +161,6 @@ func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
 }
 
 func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
-	// createTime := in.Created
-	// if createTime == "" {
-	// 	createTime = time.Now()
-	// }
-	//createTime.Format("2006.01.02 15:04:05")
 	id := 0
 	err := s.db.QueryRow(context.Background(), `INSERT INTO threads (title, author, forum, message, votes, slug, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`, in.Title, in.Author, in.Forum, in.Message, 0, in.Slug, in.Created).Scan(&id)
 	if err != nil {
@@ -219,7 +217,7 @@ func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bo
 				return nil, err
 			}
 		}
-		rows, err = s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON threads.forum=forums.slug WHERE forums.slug = $1 AND threads.created <= $2 ORDER BY threads.created LIMIT $3;`, slug, since, limit)
+		rows, err = s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON threads.forum=forums.slug WHERE forums.slug = $1 AND threads.created <= $2 ORDER BY threads.created DESC LIMIT $3;`, slug, since, limit)
 	}
 	if err != nil {
 		return nil, err

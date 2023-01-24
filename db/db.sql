@@ -21,7 +21,7 @@ CREATE UNLOGGED TABLE threads (
     message TEXT NOT NULL,
     votes INT DEFAULT 0,
     slug TEXT,
-    created TIMESTAMP
+    created TIMESTAMP WITH TIME ZONE
 );
 
 CREATE UNLOGGED TABLE posts (
@@ -32,7 +32,7 @@ CREATE UNLOGGED TABLE posts (
     forum TEXT NOT NULL REFERENCES forums (slug) ON DELETE CASCADE,
     isedited BOOLEAN,
     thread INT REFERENCES threads (id) ON DELETE CASCADE,
-    created TIMESTAMP
+    created TIMESTAMP WITH TIME ZONE
 );
 
 CREATE UNLOGGED TABLE votes (

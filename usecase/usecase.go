@@ -109,11 +109,12 @@ func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.
 	}
 	parentPostsNumbers := make([]int, 0)
 	m := make(map[int]bool)
-	for _, post := range in.Posts {
+	for _, post := range *in {
 		if _, ok := m[post.Parent]; !ok {
 			m[post.Parent] = true
-			parentPostsNumbers = append(parentPostsNumbers, post.Parent)
-
+			if post.Parent != 0 {
+				parentPostsNumbers = append(parentPostsNumbers, post.Parent)
+			}
 		}
 		_, err = api.store.GetProfile(post.Author)
 		if err != nil {
@@ -138,7 +139,7 @@ func (api *Usecase) UpdateThreadInfo(in *model.ThreadUpdate, id int, slug string
 	if in.Title == "" {
 		in.Title = thread.Title
 	}
-	err = api.store.UpdateThreadInfo(in)
+	err = api.store.UpdateThreadInfo(in, thread.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -152,10 +153,11 @@ func (api *Usecase) VoteForThread(in *model.Vote, id int, slug string) (*model.T
 	if err != nil {
 		return nil, err
 	}
-	_, err = api.store.GetProfile(in.Nickname)
+	user, err := api.store.GetProfile(in.Nickname)
 	if err != nil {
 		return nil, err
 	}
+	in.Nickname = user.Nickname
 	newRating, err := api.store.VoteForThread(in, thread.Id)
 	if err != nil {
 		return nil, err

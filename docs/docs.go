@@ -234,7 +234,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Threads"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Thread"
+                            }
                         }
                     },
                     "404": {
@@ -491,20 +494,23 @@ const docTemplate = `{
                 "operationId": "CreatePosts",
                 "parameters": [
                     {
-                        "description": "Posts params",
-                        "name": "posts",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.Posts"
-                        }
-                    },
-                    {
                         "type": "string",
                         "description": "slug or id",
                         "name": "slug_or_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Posts params",
+                        "name": "posts",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Post"
+                            }
+                        }
                     }
                 ],
                 "responses": {
@@ -689,7 +695,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Threads"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Thread"
+                            }
                         }
                     },
                     "404": {
@@ -1020,17 +1029,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.Posts": {
-            "type": "object",
-            "properties": {
-                "posts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Post"
-                    }
-                }
-            }
-        },
         "model.Response": {
             "type": "object",
             "properties": {
@@ -1108,17 +1106,6 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
-                }
-            }
-        },
-        "model.Threads": {
-            "type": "object",
-            "properties": {
-                "threads": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Thread"
-                    }
                 }
             }
         },

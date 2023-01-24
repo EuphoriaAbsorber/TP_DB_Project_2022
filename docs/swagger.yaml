@@ -61,13 +61,6 @@ definitions:
       message:
         type: string
     type: object
-  model.Posts:
-    properties:
-      posts:
-        items:
-          $ref: '#/definitions/model.Post'
-        type: array
-    type: object
   model.Response:
     properties:
       body: {}
@@ -119,13 +112,6 @@ definitions:
         type: string
       title:
         type: string
-    type: object
-  model.Threads:
-    properties:
-      threads:
-        items:
-          $ref: '#/definitions/model.Thread'
-        type: array
     type: object
   model.User:
     properties:
@@ -261,7 +247,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Threads'
+            items:
+              $ref: '#/definitions/model.Thread'
+            type: array
         "404":
           description: Not found - Requested entity is not found in database
           schema:
@@ -475,17 +463,19 @@ paths:
       description: Creates Posts
       operationId: CreatePosts
       parameters:
-      - description: Posts params
-        in: body
-        name: posts
-        required: true
-        schema:
-          $ref: '#/definitions/model.Posts'
       - description: slug or id
         in: path
         name: slug_or_id
         required: true
         type: string
+      - description: Posts params
+        in: body
+        name: posts
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.Post'
+          type: array
       produces:
       - application/json
       responses:
@@ -614,7 +604,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Threads'
+            items:
+              $ref: '#/definitions/model.Thread'
+            type: array
         "404":
           description: Not found - Requested entity is not found in database
           schema:

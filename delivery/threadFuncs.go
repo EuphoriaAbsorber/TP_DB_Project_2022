@@ -16,8 +16,8 @@ import (
 // @Accept  json
 // @Produce  json
 // @Tags Thread
-// @Param posts body model.Posts true "Posts params"
 // @Param slug_or_id path string true "slug or id"
+// @Param posts body model.Posts true "Posts params"
 // @Success 201 {object} model.Response "OK"
 // @Failure 400 {object} model.Error "Bad request - Problem with the request"
 // @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
@@ -35,14 +35,14 @@ func (api *Handler) CreatePosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	var req model.Posts
+	req := new(model.Posts)
 	err = decoder.Decode(&req)
 	if err != nil {
 		log.Println("error: ", err)
 		ReturnErrorJSON(w, model.ErrBadRequest400, 400)
 		return
 	}
-	posts, err := api.usecase.CreatePosts(&req, id, slug)
+	posts, err := api.usecase.CreatePosts(req, id, slug)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
