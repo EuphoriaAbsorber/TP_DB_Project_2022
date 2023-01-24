@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	_ "dbproject/docs"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	deliv "dbproject/delivery"
 	rep "dbproject/repository"
@@ -15,7 +13,10 @@ import (
 
 	conf "dbproject/config"
 
+	"github.com/jackc/pgx"
 	httpSwagger "github.com/swaggo/http-swagger"
+
+	_ "github.com/lib/pq"
 )
 
 func loggingMiddleware(next http.Handler) http.Handler {
@@ -31,16 +32,30 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	myRouter := mux.NewRouter()
-	//urlDB := "postgres://" + conf.DBSPuser + ":" + conf.DBPassword + "@" + conf.DBHost + ":" + conf.DBPort + "/" + conf.DBName
-	urlDB := "postgres://art:12345@localhost:5432/dbproject_base"
-	config, _ := pgxpool.ParseConfig(urlDB)
-	config.MaxConns = 120
-	db, err := pgxpool.New(context.Background(), config.ConnString())
+	// //urlDB := "postgres://" + conf.DBSPuser + ":" + conf.DBPassword + "@" + conf.DBHost + ":" + conf.DBPort + "/" + conf.DBName
+	// urlDB := "postgres://art:12345@localhost:5432/dbproject_base"
+	// config, _ := pgxpool.ParseConfig(urlDB)
+	// config.MaxConns = 120
+	// db, err := pgxpool.New(context.Background(), config.ConnString())
 
+	// if err != nil {
+	// 	log.Println("could not connect to database")
+	// } else {
+	// 	log.Println("database is reachable")
+	// }
+	// defer db.Close()
+	conn, err := pgx.ParseConnectionString("host=localhost user=art password=12345 dbname=dbproject_base sslmode=disable")
 	if err != nil {
-		log.Println("could not connect to database")
-	} else {
-		log.Println("database is reachable")
+		log.Println(err)
+	}
+	db, err := pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig:     conn,
+		MaxConnections: 1000,
+		AfterConnect:   nil,
+		AcquireTimeout: 0,
+	})
+	if err != nil {
+		log.Println(err)
 	}
 	defer db.Close()
 

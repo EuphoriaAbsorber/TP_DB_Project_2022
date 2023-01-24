@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"context"
 	"dbproject/model"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx"
+	_ "github.com/lib/pq"
 )
 
 type StoreInterface interface {
@@ -34,17 +34,17 @@ type StoreInterface interface {
 }
 
 type Store struct {
-	db *pgxpool.Pool
+	db *pgx.ConnPool
 }
 
-func NewStore(db *pgxpool.Pool) StoreInterface {
+func NewStore(db *pgx.ConnPool) StoreInterface {
 	return &Store{
 		db: db,
 	}
 }
 
 func (s *Store) CreateUser(in *model.User) error {
-	_, err := s.db.Exec(context.Background(), `INSERT INTO users (email, fullname, nickname, about) VALUES ($1, $2, $3, $4);`, in.Email, in.Fullname, in.Nickname, in.About)
+	_, err := s.db.Exec(`INSERT INTO users (email, fullname, nickname, about) VALUES ($1, $2, $3, $4);`, in.Email, in.Fullname, in.Nickname, in.About)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (s *Store) CreateUser(in *model.User) error {
 }
 func (s *Store) GetUsersByUsermodel(in *model.User) ([]*model.User, error) {
 	users := []*model.User{}
-	rows, err := s.db.Query(context.Background(), `SELECT email, fullname, nickname, about FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(nickname) = LOWER($2);`, in.Email, in.Nickname)
+	rows, err := s.db.Query(`SELECT email, fullname, nickname, about FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(nickname) = LOWER($2);`, in.Email, in.Nickname)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *Store) GetUsersByUsermodel(in *model.User) ([]*model.User, error) {
 }
 
 func (s *Store) GetProfile(nickname string) (*model.User, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT email, fullname, nickname, about FROM users WHERE LOWER(nickname) = LOWER($1);`, nickname)
+	rows, err := s.db.Query(`SELECT email, fullname, nickname, about FROM users WHERE LOWER(nickname) = LOWER($1);`, nickname)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Store) GetProfile(nickname string) (*model.User, error) {
 }
 
 func (s *Store) ChangeProfile(in *model.User) error {
-	_, err := s.db.Exec(context.Background(), `UPDATE users SET email = $1, fullname = $2, about = $3 WHERE LOWER(nickname) = LOWER($4);`, in.Email, in.Fullname, in.About, in.Nickname)
+	_, err := s.db.Exec(`UPDATE users SET email = $1, fullname = $2, about = $3 WHERE LOWER(nickname) = LOWER($4);`, in.Email, in.Fullname, in.About, in.Nickname)
 	if err != nil {
 		return err
 	}
@@ -94,14 +94,14 @@ func (s *Store) ChangeProfile(in *model.User) error {
 }
 
 func (s *Store) CreateForum(in *model.Forum) error {
-	_, err := s.db.Exec(context.Background(), `INSERT INTO forums (title, user1, slug) VALUES ($1, $2, $3);`, in.Title, in.User, in.Slug)
+	_, err := s.db.Exec(`INSERT INTO forums (title, user1, slug) VALUES ($1, $2, $3);`, in.Title, in.User, in.Slug)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE LOWER(user1) = LOWER($1);`, nickname)
+	rows, err := s.db.Query(`SELECT title, user1, slug, posts, threads FROM forums WHERE LOWER(user1) = LOWER($1);`, nickname)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
 }
 
 func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE LOWER(slug) = LOWER($1);`, slug)
+	rows, err := s.db.Query(`SELECT title, user1, slug, posts, threads FROM forums WHERE LOWER(slug) = LOWER($1);`, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
 	if in.Slug == "" {
 		return nil, nil
 	}
-	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(slug) = LOWER($1);`, in.Slug)
+	rows, err := s.db.Query(`SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(slug) = LOWER($1);`, in.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
 			return nil, err
 		}
 		// newRate := 0
-		// err = s.db.QueryRow(context.Background(), `SELECT sum(voice) FROM votes WHERE thread = $1;`, dat.Id).Scan(&newRate)
+		// err = s.db.QueryRow(, `SELECT sum(voice) FROM votes WHERE thread = $1;`, dat.Id).Scan(&newRate)
 		// if err != nil {
 		// 	return nil, err
 		// }
@@ -162,11 +162,11 @@ func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
 
 func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 	id := 0
-	err := s.db.QueryRow(context.Background(), `INSERT INTO threads (title, author, forum, message, votes, slug, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`, in.Title, in.Author, in.Forum, in.Message, 0, in.Slug, in.Created).Scan(&id)
+	err := s.db.QueryRow(`INSERT INTO threads (title, author, forum, message, votes, slug, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`, in.Title, in.Author, in.Forum, in.Message, 0, in.Slug, in.Created).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
-	_, err = s.db.Exec(context.Background(), `UPDATE forums SET threads = threads + 1 WHERE slug = $1;`, in.Slug)
+	_, err = s.db.Exec(`UPDATE forums SET threads = threads + 1 WHERE slug = $1;`, in.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 
 func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error) {
 	users := []*model.User{}
-	rows, err := s.db.Query(context.Background(), `SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
+	rows, err := s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
 		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON users.nickname=threads.author WHERE threads.forum = $1) AS U WHERE U.nickname > $2 ORDER BY U.nickname LIMIT $3;`, slug, since, limit)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) (
 		if since == "" {
 			since = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя"
 		}
-		rows, err = s.db.Query(context.Background(), `SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
+		rows, err = s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
 			UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON users.nickname=threads.author WHERE threads.forum = $1) AS U WHERE U.nickname < $2 ORDER BY U.nickname DESC LIMIT $3;`, slug, since, limit)
 	}
 	if err != nil {
@@ -206,7 +206,7 @@ func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) (
 func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error) {
 	threads := []*model.Thread{}
 
-	rows, err := s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON LOWER(threads.forum)=LOWER(forums.slug) WHERE LOWER(forums.slug) = LOWER($1) AND threads.created >= $2 ORDER BY threads.created ASC LIMIT $3;`, slug, since, limit)
+	rows, err := s.db.Query(`SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(forum) = LOWER($1) AND created >= $2 ORDER BY created ASC LIMIT $3;`, slug, since, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bo
 				return nil, err
 			}
 		}
-		rows, err = s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON LOWER(threads.forum)=LOWER(forums.slug) WHERE LOWER(forums.slug) = LOWER($1) AND threads.created <= $2 ORDER BY threads.created DESC LIMIT $3;`, slug, since, limit)
+		rows, err = s.db.Query(`SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(forum) = LOWER($1) AND created <= $2 ORDER BY created DESC LIMIT $3;`, slug, since, limit)
 	}
 	if err != nil {
 		return nil, err
@@ -235,7 +235,7 @@ func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bo
 }
 
 func (s *Store) GetPostById(id int) (*model.Post, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT id, parent, author, message, forum, isedited, thread, created FROM posts WHERE id = $1;`, id)
+	rows, err := s.db.Query(`SELECT id, parent, author, message, forum, isedited, thread, created FROM posts WHERE id = $1;`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (s *Store) UpdatePost(id int, mes string) (*model.Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = s.db.Exec(context.Background(), `UPDATE posts SET message = $1, isedited = $2 WHERE id = $3;`, mes, true, id)
+	_, err = s.db.Exec(`UPDATE posts SET message = $1, isedited = $2 WHERE id = $3;`, mes, true, id)
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func (s *Store) UpdatePost(id int, mes string) (*model.Post, error) {
 
 func (s *Store) GetServiceStatus() (*model.Status, error) {
 	status := &model.Status{}
-	rows, err := s.db.Query(context.Background(), `SELECT (SELECT count(*) FROM users) AS u, (SELECT count(*) FROM forums) AS f, (SELECT count(*) FROM threads) AS t, (SELECT count(*) FROM posts) AS p;`)
+	rows, err := s.db.Query(`SELECT (SELECT count(*) FROM users) AS u, (SELECT count(*) FROM forums) AS f, (SELECT count(*) FROM threads) AS t, (SELECT count(*) FROM posts) AS p;`)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +280,7 @@ func (s *Store) GetServiceStatus() (*model.Status, error) {
 }
 
 func (s *Store) ServiceClear() error {
-	_, err := s.db.Exec(context.Background(), "TRUNCATE TABLE users, forums, threads, posts, votes CASCADE;")
+	_, err := s.db.Exec("TRUNCATE TABLE users, forums, threads, posts, votes CASCADE;")
 	if err != nil {
 		return err
 	}

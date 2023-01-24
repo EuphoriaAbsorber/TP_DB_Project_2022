@@ -23,8 +23,8 @@ var PathGetThreadPosts = BasePath + "/thread/{slug_or_id}/posts"
 var PathPost = BasePath + "/post/{id}/details"
 
 var Headers = map[string]string{
-	"Access-Control-Allow-Credentials": "true",
-	"Access-Control-Allow-Headers":     "Origin, Content-Type, accept",
-	"Access-Control-Allow-Methods":     "GET, POST, DELETE, OPTIONS",
-	"Content-Type":                     "application/json",
+	//"Access-Control-Allow-Credentials": "true",
+	//"Access-Control-Allow-Headers":     "Origin, Content-Type, accept",
+	//"Access-Control-Allow-Methods":     "GET, POST, DELETE, OPTIONS",
+	"Content-Type": "application/json; charset=utf-8",
 }

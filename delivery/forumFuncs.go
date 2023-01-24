@@ -215,15 +215,38 @@ func (api *Handler) GetForumUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := api.usecase.GetForumUsers(slug, limit, since, desc)
-	if err != nil {
-		log.Println(err)
+	// users, err := api.usecase.GetForumUsers(slug, limit, since, desc)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	ReturnErrorJSON(w, model.ErrServerError500, 500)
+	// 	return
+	// }
+	c1 := make(chan string, 1)
+	go func() {
+		users, err := api.usecase.GetForumUsers(slug, limit, since, desc)
+		if err != nil {
+			log.Println(err)
+			ReturnErrorJSON(w, model.ErrServerError500, 500)
+			return
+		}
+		c1 <- "no timeout"
+		w.WriteHeader(200)
+		json.NewEncoder(w).Encode(&users)
+		return
+	}()
+
+	// Listen on our channel AND a timeout channel - which ever happens first.
+	select {
+	case res := <-c1:
+		log.Println(res)
+	case <-time.After(10 * time.Second):
+		log.Println("out of time :(")
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
 
-	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(&users)
+	//w.WriteHeader(200)
+	//json.NewEncoder(w).Encode(&users)
 }
 
 // GetForumThreads godoc
@@ -272,7 +295,7 @@ func (api *Handler) GetForumThreads(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = api.usecase.GetForumBySlug(slug)
+	forum, err := api.usecase.GetForumBySlug(slug)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -284,13 +307,48 @@ func (api *Handler) GetForumThreads(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	threads, err := api.usecase.GetForumThreads(slug, limit, since, desc)
+	// c1 := make(chan string, 1)
+
+	// // Run your long running function in it's own goroutine and pass back it's
+	// // response into our channel.
+	// go func() {
+	// 	threads, err := api.usecase.GetForumThreads(slug, limit, since, desc)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 		ReturnErrorJSON(w, model.ErrServerError500, 500)
+	// 		return
+	// 	}
+	// 	c1 <- "no timeout"
+	// 	w.WriteHeader(200)
+	// 	json.NewEncoder(w).Encode(&threads)
+	// 	return
+	// }()
+
+	// // Listen on our channel AND a timeout channel - which ever happens first.
+	// select {
+	// case res := <-c1:
+	// 	log.Println(res)
+	// case <-time.After(10 * time.Second):
+	// 	log.Println("out of time :(")
+	// 	ReturnErrorJSON(w, model.ErrServerError500, 500)
+	// 	return
+	// }
+
+	threads, err := api.usecase.GetForumThreads(forum.Slug, limit, since, desc)
 	if err != nil {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
-
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(&threads)
+	// threads, err := api.usecase.GetForumThreads(slug, limit, since, desc)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	ReturnErrorJSON(w, model.ErrServerError500, 500)
+	// 	return
+	// }
+
+	// w.WriteHeader(200)
+	// json.NewEncoder(w).Encode(&threads)
 }
