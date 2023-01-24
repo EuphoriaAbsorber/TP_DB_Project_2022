@@ -24,7 +24,7 @@ type StoreInterface interface {
 	UpdatePost(id int, mes string) (*model.Post, error)
 	GetServiceStatus() (*model.Status, error)
 	ServiceClear() error
-	CheckAllPostParentIds(in []int) error
+	CheckAllPostParentIds(threadId int, in []int) error
 	GetThreadById(id int) (*model.Thread, error)
 	GetThreadBySlug(slug string) (*model.Thread, error)
 	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
@@ -166,7 +166,7 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = s.db.Exec(`UPDATE forums SET threads = threads + 1 WHERE slug = $1;`, in.Slug)
+	_, err = s.db.Exec(`UPDATE forums SET threads = threads + 1 WHERE LOWER(slug) = LOWER($1);`, in.Slug)
 	if err != nil {
 		return nil, err
 	}
@@ -176,8 +176,8 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 
 func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error) {
 	users := []*model.User{}
-	rows, err := s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
-		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON users.nickname=threads.author WHERE threads.forum = $1) AS U WHERE U.nickname > $2 ORDER BY U.nickname LIMIT $3;`, slug, since, limit)
+	rows, err := s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON LOWER(users.nickname)=LOWER(posts.author) WHERE LOWER(posts.forum) = LOWER($1)
+		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON LOWER(users.nickname)=LOWER(threads.author) WHERE LOWER(threads.forum) = LOWER($1)) AS U WHERE U.nickname > $2 ORDER BY U.nickname ASC LIMIT $3;`, slug, since, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -185,8 +185,8 @@ func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) (
 		if since == "" {
 			since = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя"
 		}
-		rows, err = s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON users.nickname=posts.author WHERE posts.forum = $1
-			UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON users.nickname=threads.author WHERE threads.forum = $1) AS U WHERE U.nickname < $2 ORDER BY U.nickname DESC LIMIT $3;`, slug, since, limit)
+		rows, err = s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON LOWER(users.nickname)=LOWER(posts.author) WHERE LOWER(posts.forum) = LOWER($1)
+		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON LOWER(users.nickname)=LOWER(threads.author) WHERE LOWER(threads.forum) = LOWER($1)) AS U WHERE U.nickname < $2 ORDER BY U.nickname DESC LIMIT $3;`, slug, since, limit)
 	}
 	if err != nil {
 		return nil, err

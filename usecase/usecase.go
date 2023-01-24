@@ -116,12 +116,13 @@ func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.
 				parentPostsNumbers = append(parentPostsNumbers, post.Parent)
 			}
 		}
-		_, err = api.store.GetProfile(post.Author)
+		user, err := api.store.GetProfile(post.Author)
 		if err != nil {
 			return nil, err
 		}
+		post.Author = user.Nickname
 	}
-	err = api.store.CheckAllPostParentIds(parentPostsNumbers)
+	err = api.store.CheckAllPostParentIds(thread.Id, parentPostsNumbers)
 	if err != nil {
 		return nil, err
 	}

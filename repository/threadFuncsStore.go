@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-func (s *Store) CheckAllPostParentIds(in []int) error {
+func (s *Store) CheckAllPostParentIds(threadId int, in []int) error {
 	dbcount := 0
-	err := s.db.QueryRow(`SELECT count(*) FROM (SELECT parent FROM posts JOIN threads ON posts.thread = threads.id WHERE threads.id = 1 GROUP BY parent HAVING $1 @> array_agg(parent)) AS S;`, in).Scan(&dbcount)
+	err := s.db.QueryRow(`SELECT count(*) FROM (SELECT parent FROM posts JOIN threads ON posts.thread = threads.id WHERE threads.id = $1 GROUP BY parent HAVING $2 @> array_agg(parent)) AS S;`, threadId, in).Scan(&dbcount)
 	if err != nil {
 		return err
 	}
@@ -55,18 +55,21 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]
 
 	posts := []*model.Post{}
 	createTime := time.Now()
+	//createdFormatted := createTime.Format("2022-06-27T02:03:37.007+03:00")
 	createdFormatted := createTime.Format(time.RFC3339)
+	dbCreatedTime := time.Now()
 	for _, post := range *in {
 		id := 0
 		insertModel := model.Post{Parent: post.Parent, Author: post.Author, Message: post.Message, IsEdited: false, Thread: threadId, Forum: forumSlug, Created: createTime}
-		err := s.db.QueryRow(`INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id)
+		err := s.db.QueryRow(`INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id, &dbCreatedTime)
 		if err != nil {
 			return nil, err
 		}
 		insertModel.Id = id
+		insertModel.Created = dbCreatedTime
 		posts = append(posts, &insertModel)
 	}
-	_, err := s.db.Exec(`UPDATE forums SET posts = posts + $1 WHERE slug = $2;`, len(*in), forumSlug)
+	_, err := s.db.Exec(`UPDATE forums SET posts = posts + $1 WHERE LOWER(slug) = LOWER($2);`, len(*in), forumSlug)
 	if err != nil {
 		return nil, err
 	}
