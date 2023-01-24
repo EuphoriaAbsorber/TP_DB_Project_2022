@@ -69,7 +69,7 @@ func (s *Store) GetUsersByUsermodel(in *model.User) ([]*model.User, error) {
 }
 
 func (s *Store) GetProfile(nickname string) (*model.User, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT email, fullname, nickname, about FROM users WHERE nickname = $1;`, nickname)
+	rows, err := s.db.Query(context.Background(), `SELECT email, fullname, nickname, about FROM users WHERE LOWER(nickname) = LOWER($1);`, nickname)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Store) GetProfile(nickname string) (*model.User, error) {
 }
 
 func (s *Store) ChangeProfile(in *model.User) error {
-	_, err := s.db.Exec(context.Background(), `UPDATE users SET email = $1, fullname = $2, about = $3 WHERE nickname = $4;`, in.Email, in.Fullname, in.About, in.Nickname)
+	_, err := s.db.Exec(context.Background(), `UPDATE users SET email = $1, fullname = $2, about = $3 WHERE LOWER(nickname) = LOWER($4);`, in.Email, in.Fullname, in.About, in.Nickname)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (s *Store) CreateForum(in *model.Forum) error {
 	return nil
 }
 func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE user1 = $1;`, nickname)
+	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE LOWER(user1) = LOWER($1);`, nickname)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
 }
 
 func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE slug = $1;`, slug)
+	rows, err := s.db.Query(context.Background(), `SELECT title, user1, slug, posts, threads FROM forums WHERE LOWER(slug) = LOWER($1);`, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
 }
 
 func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND author = $2 AND message = $3;`, in.Title, in.Author, in.Message)
+	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND LOWER(author) = LOWER($2) AND message = $3;`, in.Title, in.Author, in.Message)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +158,13 @@ func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
 }
 
 func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
-	createTime := time.Now()
-	_, err := s.db.Exec(context.Background(), `INSERT INTO threads (title, author, forum, message, votes, slug, created) VALUES ($1, $2, $3, $4, $5, $6, $7);`, in.Title, in.Author, in.Forum, in.Message, 0, in.Slug, createTime.Format("2006.01.02 15:04:05"))
+	// createTime := in.Created
+	// if createTime == "" {
+	// 	createTime = time.Now()
+	// }
+	//createTime.Format("2006.01.02 15:04:05")
+	id := 0
+	err := s.db.QueryRow(context.Background(), `INSERT INTO threads (title, author, forum, message, votes, slug, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;`, in.Title, in.Author, in.Forum, in.Message, 0, in.Slug, in.Created).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +172,7 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	in.Created = createTime
+	in.Id = id
 	return in, nil
 }
 

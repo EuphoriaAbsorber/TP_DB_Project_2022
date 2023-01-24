@@ -33,7 +33,7 @@ func (api *Handler) CreateForum(w http.ResponseWriter, r *http.Request) {
 		ReturnErrorJSON(w, model.ErrBadRequest400, 400)
 		return
 	}
-	_, err = api.usecase.GetProfile(req.User)
+	user, err := api.usecase.GetProfile(req.User)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -44,6 +44,7 @@ func (api *Handler) CreateForum(w http.ResponseWriter, r *http.Request) {
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
+	req.User = user.Nickname
 
 	forum, err := api.usecase.GetForumByUsername(req.User)
 	if err != nil && err != model.ErrNotFound404 {
@@ -123,10 +124,10 @@ func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 		ReturnErrorJSON(w, model.ErrBadRequest400, 400)
 		return
 	}
-	req.Slug = slug
+	req.Forum = slug
 	req.Votes = 0
 
-	forum, err := api.usecase.GetForumBySlug(slug)
+	_, err = api.usecase.GetForumBySlug(slug)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -138,9 +139,7 @@ func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Forum = forum.Title
-
-	_, err = api.usecase.GetProfile(req.Author)
+	user, err := api.usecase.GetProfile(req.Author)
 	if err == model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrNotFound404, 404)
@@ -151,7 +150,7 @@ func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 		ReturnErrorJSON(w, model.ErrServerError500, 500)
 		return
 	}
-
+	req.Author = user.Nickname
 	thread, err := api.usecase.GetThreadByModel(&req)
 	if err != nil && err != model.ErrNotFound404 {
 		log.Println(err)
