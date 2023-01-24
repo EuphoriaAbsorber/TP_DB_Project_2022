@@ -191,3 +191,66 @@ func (api *Handler) VoteForThread(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(&thread)
 }
+
+// GetThreadPosts godoc
+// @Summary GetThreadPosts
+// @Description GetThreadPosts
+// @ID GetThreadPosts
+// @Accept  json
+// @Produce  json
+// @Tags Thread
+// @Param slug_or_id path string true "slug or id of thread"
+// @Param   limit   query     string  false  "limit"
+// @Param   since   query     string  false  "since"
+// @Param   sort   query     string  false  "sort"
+// @Param   desc    query     bool  false  "desc"
+// @Success 200 {object} model.Threads
+// @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
+// @Failure 500 {object} model.Error "Internal Server Error - Request is valid but operation failed at server side"
+// @Router /thread/{slug_or_id}/posts [get]
+func (api *Handler) GetThreadPosts(w http.ResponseWriter, r *http.Request) {
+	s := strings.Split(r.URL.Path, "/")
+	slug_or_id := s[len(s)-2]
+	id := 0
+	slug := slug_or_id
+	id, err := strconv.Atoi(slug_or_id)
+	if err != nil {
+		log.Println("error: ", err)
+	}
+	sinceS := r.URL.Query().Get("since")
+	sort := r.URL.Query().Get("sort")
+	limitS := r.URL.Query().Get("limit")
+	descS := r.URL.Query().Get("desc")
+	desc := false
+	if descS == "true" {
+		desc = true
+	}
+	limit, err := strconv.Atoi(limitS)
+	if err != nil {
+		log.Println("error: ", err)
+		limit = 1e9
+	}
+	since, err := strconv.Atoi(sinceS)
+	if err != nil {
+		log.Println("error: ", err)
+		since = 0
+	}
+	if sort == "" {
+		sort = "flat"
+	}
+
+	posts, err := api.usecase.GetThreadPosts(slug, id, limit, since, sort, desc)
+	if err == model.ErrNotFound404 {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrNotFound404, 404)
+		return
+	}
+	if err != nil {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrServerError500, 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(&posts)
+}

@@ -26,6 +26,7 @@ type UsecaseInterface interface {
 	CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error)
 	UpdateThreadInfo(in *model.ThreadUpdate, id int, slug string) (*model.Thread, error)
 	VoteForThread(in *model.Vote, id int, slug string) (*model.Thread, error)
+	GetThreadPosts(slug string, id int, limit int, since int, sort string, desc bool) ([]*model.Post, error)
 }
 
 type Usecase struct {
@@ -161,4 +162,11 @@ func (api *Usecase) VoteForThread(in *model.Vote, id int, slug string) (*model.T
 	}
 	thread.Votes = newRating
 	return thread, nil
+}
+func (api *Usecase) GetThreadPosts(slug string, id int, limit int, since int, sort string, desc bool) ([]*model.Post, error) {
+	thread, err := api.GetThread(id, slug)
+	if err != nil {
+		return nil, err
+	}
+	return api.store.GetThreadPosts(thread.Id, limit, since, sort, desc)
 }

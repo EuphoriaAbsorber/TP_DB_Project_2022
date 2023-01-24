@@ -30,6 +30,7 @@ type StoreInterface interface {
 	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
 	UpdateThreadInfo(in *model.ThreadUpdate) error
 	VoteForThread(in *model.Vote, threadID int) (int, error)
+	GetThreadPosts(threadId int, limit int, since int, sort string, desc bool) ([]*model.Post, error)
 }
 
 type Store struct {
@@ -145,6 +146,12 @@ func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
 		if err != nil {
 			return nil, err
 		}
+		// newRate := 0
+		// err = s.db.QueryRow(context.Background(), `SELECT sum(voice) FROM votes WHERE thread = $1;`, dat.Id).Scan(&newRate)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		// dat.Votes = newRate
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
