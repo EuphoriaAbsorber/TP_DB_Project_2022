@@ -19,6 +19,7 @@ type StoreInterface interface {
 	GetThreadByModel(in *model.Thread) (*model.Thread, error)
 	CreateThreadByModel(in *model.Thread) (*model.Thread, error)
 	GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error)
+	GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error)
 }
 
 type Store struct {
@@ -145,6 +146,10 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = s.db.Exec(context.Background(), `UPDATE forums SET threads = threads + 1 WHERE slug = $1;`, in.Slug)
+	if err != nil {
+		return nil, err
+	}
 	in.Created = createTime
 	return in, nil
 }
@@ -176,4 +181,35 @@ func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) (
 		users = append(users, &dat)
 	}
 	return users, nil
+}
+
+func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error) {
+	threads := []*model.Thread{}
+
+	rows, err := s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON threads.forum=forums.slug WHERE forums.slug = $1 AND threads.created >= $2 ORDER BY threads.created LIMIT $3;`, slug, since, limit)
+	if err != nil {
+		return nil, err
+	}
+	if desc {
+		if since.Format("0000-01-01T00:00:00.000Z") == "0000-01-01T00:00:00.000Z" {
+			since, err = time.Parse(time.RFC3339, "5000-01-01T00:00:00.000Z")
+			if err != nil {
+				return nil, err
+			}
+		}
+		rows, err = s.db.Query(context.Background(), `SELECT threads.id, threads.title, author, forum, message, votes, threads.slug, created FROM threads JOIN forums ON threads.forum=forums.slug WHERE forums.slug = $1 AND threads.created <= $2 ORDER BY threads.created LIMIT $3;`, slug, since, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.Thread{}
+		err := rows.Scan(&dat.Id, &dat.Title, &dat.Author, &dat.Forum, &dat.Message, &dat.Votes, &dat.Slug, &dat.Created)
+		if err != nil {
+			return nil, err
+		}
+		threads = append(threads, &dat)
+	}
+	return threads, nil
 }

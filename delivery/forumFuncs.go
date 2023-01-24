@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // CreateForum godoc
@@ -179,7 +180,7 @@ func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Tags Forum
-// @Param slug path string true "slug of user"
+// @Param slug path string true "slug of forum"
 // @Param   limit   query     string  false  "limit"
 // @Param   since   query     string  false  "since"
 // @Param   desc    query     bool  false  "desc"
@@ -227,4 +228,73 @@ func (api *Handler) GetForumUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(&users)
+}
+
+// GetForumThreads godoc
+// @Summary Gets forum threads
+// @Description Gets forum threads
+// @ID GetForumThreads
+// @Accept  json
+// @Produce  json
+// @Tags Forum
+// @Param slug path string true "slug of forum"
+// @Param   limit   query     string  false  "limit"
+// @Param   since   query     string  false  "since"
+// @Param   desc    query     bool  false  "desc"
+// @Success 200 {object} model.Threads
+// @Failure 404 {object} model.Error "Not found - Requested entity is not found in database"
+// @Failure 500 {object} model.Error "Internal Server Error - Request is valid but operation failed at server side"
+// @Router /forum/{slug}/threads [get]
+func (api *Handler) GetForumThreads(w http.ResponseWriter, r *http.Request) {
+	s := strings.Split(r.URL.Path, "/")
+	slug := s[len(s)-2]
+
+	sinceS := r.URL.Query().Get("since")
+	limitS := r.URL.Query().Get("limit")
+	descS := r.URL.Query().Get("desc")
+	desc := false
+	if descS == "true" {
+		desc = true
+	}
+	limit, err := strconv.Atoi(limitS)
+	if err != nil {
+		log.Println("error: ", err)
+		limit = 1e9
+	}
+	since, err := time.Parse(time.RFC3339, "1971-01-01T00:00:00.000Z")
+	if err != nil {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrBadRequest400, 400)
+		return
+	}
+	if sinceS != "" {
+		since, err = time.Parse(time.RFC3339, sinceS)
+		if err != nil {
+			log.Println(err)
+			ReturnErrorJSON(w, model.ErrBadRequest400, 400)
+			return
+		}
+	}
+
+	_, err = api.usecase.GetForumBySlug(slug)
+	if err == model.ErrNotFound404 {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrNotFound404, 404)
+		return
+	}
+	if err != nil {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrServerError500, 500)
+		return
+	}
+
+	threads, err := api.usecase.GetForumThreads(slug, limit, since, desc)
+	if err != nil {
+		log.Println(err)
+		ReturnErrorJSON(w, model.ErrServerError500, 500)
+		return
+	}
+
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(&threads)
 }

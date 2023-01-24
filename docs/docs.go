@@ -189,6 +189,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/forum/{slug}/threads": {
+            "get": {
+                "description": "Gets forum threads",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Forum"
+                ],
+                "summary": "Gets forum threads",
+                "operationId": "GetForumThreads",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "slug of forum",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "since",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "desc",
+                        "name": "desc",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Threads"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/forum/{slug}/users": {
             "get": {
                 "description": "Gets forum users",
@@ -206,7 +269,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "slug of user",
+                        "description": "slug of forum",
                         "name": "slug",
                         "in": "path",
                         "required": true
@@ -506,6 +569,17 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "model.Threads": {
+            "type": "object",
+            "properties": {
+                "threads": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Thread"
+                    }
                 }
             }
         },

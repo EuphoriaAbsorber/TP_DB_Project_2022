@@ -3,6 +3,7 @@ package usecase
 import (
 	"dbproject/model"
 	rep "dbproject/repository"
+	"time"
 )
 
 type UsecaseInterface interface {
@@ -16,6 +17,7 @@ type UsecaseInterface interface {
 	GetThreadByModel(params *model.Thread) (*model.Thread, error)
 	CreateThreadByModel(params *model.Thread) (*model.Thread, error)
 	GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error)
+	GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error)
 }
 
 type Usecase struct {
@@ -57,4 +59,7 @@ func (api *Usecase) CreateThreadByModel(params *model.Thread) (*model.Thread, er
 }
 func (api *Usecase) GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error) {
 	return api.store.GetForumUsers(slug, limit, since, desc)
+}
+func (api *Usecase) GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error) {
+	return api.store.GetForumThreads(slug, limit, since, desc)
 }

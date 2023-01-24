@@ -10,6 +10,7 @@ var PathCreateForum = BasePath + "/forum/create"
 var PathForumInfo = BasePath + "/forum/{slug}/details"
 var PathCreateThread = BasePath + "/forum/{slug}/create"
 var PathGetForumUsers = BasePath + "/forum/{slug}/users"
+var PathGetForumThreads = BasePath + "/forum/{slug}/threads"
 
 var Headers = map[string]string{
 	"Access-Control-Allow-Credentials": "true",

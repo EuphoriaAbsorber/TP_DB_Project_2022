@@ -60,6 +60,13 @@ definitions:
       title:
         type: string
     type: object
+  model.Threads:
+    properties:
+      threads:
+        items:
+          $ref: '#/definitions/model.Thread'
+        type: array
+    type: object
   model.User:
     properties:
       about:
@@ -157,6 +164,49 @@ paths:
       summary: Gets forum info
       tags:
       - Forum
+  /forum/{slug}/threads:
+    get:
+      consumes:
+      - application/json
+      description: Gets forum threads
+      operationId: GetForumThreads
+      parameters:
+      - description: slug of forum
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: string
+      - description: since
+        in: query
+        name: since
+        type: string
+      - description: desc
+        in: query
+        name: desc
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Threads'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Gets forum threads
+      tags:
+      - Forum
   /forum/{slug}/users:
     get:
       consumes:
@@ -164,7 +214,7 @@ paths:
       description: Gets forum users
       operationId: GetForumUsers
       parameters:
-      - description: slug of user
+      - description: slug of forum
         in: path
         name: slug
         required: true
