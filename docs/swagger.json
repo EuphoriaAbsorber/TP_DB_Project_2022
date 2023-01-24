@@ -308,6 +308,232 @@
                 }
             }
         },
+        "/post/{id}/details": {
+            "get": {
+                "description": "Gets post by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Post"
+                ],
+                "summary": "Gets post by id",
+                "operationId": "GetPostById",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id of post",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "related",
+                        "name": "related",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PostFull"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Edits post by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Post"
+                ],
+                "summary": "Editss post by id",
+                "operationId": "UpdatePost",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id of post",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "PostUpdate params",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PostUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PostFull"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/service/clear": {
+            "post": {
+                "description": "Clears Service info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Service"
+                ],
+                "summary": "Clears Service info",
+                "operationId": "ServiceClear",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/service/status": {
+            "get": {
+                "description": "Gets Service info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Service"
+                ],
+                "summary": "Gets Service info",
+                "operationId": "GetServiceStatus",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Status"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/thread/{slug_or_id}/create": {
+            "post": {
+                "description": "Creates Posts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Thread"
+                ],
+                "summary": "Creates Posts",
+                "operationId": "CreatePosts",
+                "parameters": [
+                    {
+                        "description": "Posts params",
+                        "name": "posts",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.Posts"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "slug or id",
+                        "name": "slug_or_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Problem with the request",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found - Requested entity is not found in database",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - User already exists",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Request is valid but operation failed at server side",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{nickname}/create": {
             "post": {
                 "description": "Creates User",
@@ -513,10 +739,92 @@
                 }
             }
         },
+        "model.Post": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "forum": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isedited": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "integer"
+                },
+                "thread": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.PostFull": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/model.User"
+                },
+                "forum": {
+                    "$ref": "#/definitions/model.Forum"
+                },
+                "post": {
+                    "$ref": "#/definitions/model.Post"
+                },
+                "thread": {
+                    "$ref": "#/definitions/model.Thread"
+                }
+            }
+        },
+        "model.PostUpdate": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Posts": {
+            "type": "object",
+            "properties": {
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Post"
+                    }
+                }
+            }
+        },
         "model.Response": {
             "type": "object",
             "properties": {
                 "body": {}
+            }
+        },
+        "model.Status": {
+            "type": "object",
+            "properties": {
+                "forum": {
+                    "type": "integer"
+                },
+                "post": {
+                    "type": "integer"
+                },
+                "thread": {
+                    "type": "integer"
+                },
+                "user": {
+                    "type": "integer"
+                }
             }
         },
         "model.Thread": {

@@ -26,9 +26,62 @@ definitions:
       user:
         type: string
     type: object
+  model.Post:
+    properties:
+      author:
+        type: string
+      created:
+        type: string
+      forum:
+        type: string
+      id:
+        type: integer
+      isedited:
+        type: boolean
+      message:
+        type: string
+      parent:
+        type: integer
+      thread:
+        type: integer
+    type: object
+  model.PostFull:
+    properties:
+      author:
+        $ref: '#/definitions/model.User'
+      forum:
+        $ref: '#/definitions/model.Forum'
+      post:
+        $ref: '#/definitions/model.Post'
+      thread:
+        $ref: '#/definitions/model.Thread'
+    type: object
+  model.PostUpdate:
+    properties:
+      message:
+        type: string
+    type: object
+  model.Posts:
+    properties:
+      posts:
+        items:
+          $ref: '#/definitions/model.Post'
+        type: array
+    type: object
   model.Response:
     properties:
       body: {}
+    type: object
+  model.Status:
+    properties:
+      forum:
+        type: integer
+      post:
+        type: integer
+      thread:
+        type: integer
+      user:
+        type: integer
     type: object
   model.Thread:
     properties:
@@ -290,6 +343,162 @@ paths:
       summary: Creates Forum
       tags:
       - Forum
+  /post/{id}/details:
+    get:
+      consumes:
+      - application/json
+      description: Gets post by id
+      operationId: GetPostById
+      parameters:
+      - description: id of post
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: related
+        in: query
+        name: related
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PostFull'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Gets post by id
+      tags:
+      - Post
+    post:
+      consumes:
+      - application/json
+      description: Edits post by id
+      operationId: UpdatePost
+      parameters:
+      - description: id of post
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: PostUpdate params
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/model.PostUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PostFull'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Editss post by id
+      tags:
+      - Post
+  /service/clear:
+    post:
+      consumes:
+      - application/json
+      description: Clears Service info
+      operationId: ServiceClear
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Clears Service info
+      tags:
+      - Service
+  /service/status:
+    get:
+      consumes:
+      - application/json
+      description: Gets Service info
+      operationId: GetServiceStatus
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Status'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Gets Service info
+      tags:
+      - Service
+  /thread/{slug_or_id}/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates Posts
+      operationId: CreatePosts
+      parameters:
+      - description: Posts params
+        in: body
+        name: posts
+        required: true
+        schema:
+          $ref: '#/definitions/model.Posts'
+      - description: slug or id
+        in: path
+        name: slug_or_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad request - Problem with the request
+          schema:
+            $ref: '#/definitions/model.Error'
+        "404":
+          description: Not found - Requested entity is not found in database
+          schema:
+            $ref: '#/definitions/model.Error'
+        "409":
+          description: Conflict - User already exists
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal Server Error - Request is valid but operation failed
+            at server side
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Creates Posts
+      tags:
+      - Thread
   /user/{nickname}/create:
     post:
       consumes:

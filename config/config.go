@@ -12,6 +12,13 @@ var PathCreateThread = BasePath + "/forum/{slug}/create"
 var PathGetForumUsers = BasePath + "/forum/{slug}/users"
 var PathGetForumThreads = BasePath + "/forum/{slug}/threads"
 
+var PathGetServiceStatus = BasePath + "/service/status"
+var PathServiceClear = BasePath + "/service/clear"
+
+var PathCreatePosts = BasePath + "/thread/{slug_or_id}/create"
+
+var PathPost = BasePath + "/post/{id}/details"
+
 var Headers = map[string]string{
 	"Access-Control-Allow-Credentials": "true",
 	"Access-Control-Allow-Headers":     "Origin, Content-Type, accept",

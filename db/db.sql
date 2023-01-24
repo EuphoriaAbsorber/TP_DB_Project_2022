@@ -20,7 +20,7 @@ CREATE UNLOGGED TABLE threads (
     forum VARCHAR (80) NOT NULL REFERENCES forums (slug) ON DELETE CASCADE,
     message VARCHAR (400) NOT NULL,
     votes INT DEFAULT 0,
-    slug VARCHAR (100),
+    slug VARCHAR (100) UNIQUE,
     created TIMESTAMP
 );
 
@@ -33,6 +33,13 @@ CREATE UNLOGGED TABLE posts (
     isedited BOOLEAN,
     thread INT REFERENCES threads (id) ON DELETE CASCADE,
     created TIMESTAMP
+);
+
+CREATE UNLOGGED TABLE votes (
+    nickname  VARCHAR (40) NOT NULL REFERENCES users (nickname) ON DELETE CASCADE,
+    thread    INT    NOT NULL REFERENCES threads (id) ON DELETE CASCADE,
+    voice     INT    NOT NULL,
+    CONSTRAINT vote_key UNIQUE (nickname, thread)
 );
 
 

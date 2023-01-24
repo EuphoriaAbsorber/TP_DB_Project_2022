@@ -20,6 +20,14 @@ type StoreInterface interface {
 	CreateThreadByModel(in *model.Thread) (*model.Thread, error)
 	GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error)
 	GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error)
+	GetPostById(id int) (*model.Post, error)
+	UpdatePost(id int, mes string) (*model.Post, error)
+	GetServiceStatus() (*model.Status, error)
+	ServiceClear() error
+	CheckAllPostParentIds(in []int) error
+	GetThreadById(id int) (*model.Thread, error)
+	GetThreadBySlug(slug string) (*model.Thread, error)
+	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
 }
 
 type Store struct {
@@ -124,14 +132,14 @@ func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
 }
 
 func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
-	rows, err := s.db.Query(context.Background(), `SELECT title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND author = $2 AND message = $3;`, in.Title, in.Author, in.Message)
+	rows, err := s.db.Query(context.Background(), `SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE title = $1 AND author = $2 AND message = $3;`, in.Title, in.Author, in.Message)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		dat := model.Thread{}
-		err := rows.Scan(&dat.Title, &dat.Author, &dat.Forum, &dat.Message, &dat.Votes, &dat.Slug, &dat.Created)
+		err := rows.Scan(&dat.Id, &dat.Title, &dat.Author, &dat.Forum, &dat.Message, &dat.Votes, &dat.Slug, &dat.Created)
 		if err != nil {
 			return nil, err
 		}
@@ -212,4 +220,57 @@ func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bo
 		threads = append(threads, &dat)
 	}
 	return threads, nil
+}
+
+func (s *Store) GetPostById(id int) (*model.Post, error) {
+	rows, err := s.db.Query(context.Background(), `SELECT id, parent, author, message, forum, isedited, thread, created FROM posts WHERE id = $1;`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.Post{}
+		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.IsEdited, &dat.Thread, &dat.Created)
+		if err != nil {
+			return nil, err
+		}
+		return &dat, nil
+	}
+	return nil, model.ErrNotFound404
+}
+
+func (s *Store) UpdatePost(id int, mes string) (*model.Post, error) {
+	post, err := s.GetPostById(id)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.db.Exec(context.Background(), `UPDATE posts SET message = $1, isedited = $2 WHERE id = $3;`, mes, true, id)
+	if err != nil {
+		return nil, err
+	}
+	post.Message = mes
+	return post, nil
+}
+
+func (s *Store) GetServiceStatus() (*model.Status, error) {
+	status := &model.Status{}
+	rows, err := s.db.Query(context.Background(), `SELECT (SELECT count(*) FROM users) AS u, (SELECT count(*) FROM forums) AS f, (SELECT count(*) FROM threads) AS t, (SELECT count(*) FROM posts) AS p;`)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&status.User, &status.Forum, &status.Thread, &status.Post)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return status, nil
+}
+
+func (s *Store) ServiceClear() error {
+	_, err := s.db.Exec(context.Background(), "TRUNCATE TABLE users, forums, threads, posts, votes CASCADE;")
+	if err != nil {
+		return err
+	}
+	return nil
 }

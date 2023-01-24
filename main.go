@@ -60,6 +60,17 @@ func main() {
 	myRouter.HandleFunc(conf.PathGetForumUsers, handler.GetForumUsers).Methods(http.MethodGet)
 	myRouter.HandleFunc(conf.PathGetForumThreads, handler.GetForumThreads).Methods(http.MethodGet)
 
+	//post
+	myRouter.HandleFunc(conf.PathPost, handler.GetPostById).Methods(http.MethodGet)
+	myRouter.HandleFunc(conf.PathPost, handler.UpdatePost).Methods(http.MethodPost)
+
+	//service
+	myRouter.HandleFunc(conf.PathGetServiceStatus, handler.ServiceStatus).Methods(http.MethodGet)
+	myRouter.HandleFunc(conf.PathServiceClear, handler.ServiceClear).Methods(http.MethodPost)
+
+	//threads
+	myRouter.HandleFunc(conf.PathCreatePosts, handler.CreatePosts).Methods(http.MethodPost)
+
 	myRouter.PathPrefix(conf.PathDocs).Handler(httpSwagger.WrapHandler)
 
 	myRouter.Use(loggingMiddleware)
