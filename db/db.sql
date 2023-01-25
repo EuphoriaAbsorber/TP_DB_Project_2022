@@ -67,3 +67,10 @@ CREATE TRIGGER insert_post
 --INDEXES
 
 CREATE UNIQUE INDEX IF NOT EXISTS votes_key ON votes (thread, nickname);
+
+CREATE INDEX IF NOT EXISTS threads_created ON threads (created);
+CREATE INDEX IF NOT EXISTS threads_slug ON threads (lower(slug));
+
+CREATE INDEX IF NOT EXISTS users_nickname ON users (lower(nickname));
+
+CREATE INDEX IF NOT EXISTS posts_thread ON posts (thread);

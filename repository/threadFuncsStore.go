@@ -10,7 +10,7 @@ import (
 
 func (s *Store) CheckAllPostParentIds(threadId int, in []int) error {
 	dbcount := 0
-	err := s.db.QueryRow(`SELECT count(*) FROM (SELECT id FROM posts WHERE thread = $1 GROUP BY id HAVING $2 @> array_agg(id)) AS S;`, threadId, in).Scan(&dbcount)
+	err := s.db.QueryRow(`SELECT count(id) FROM (SELECT id FROM posts WHERE thread = $1 GROUP BY id HAVING $2 @> array_agg(id)) AS S;`, threadId, in).Scan(&dbcount)
 	if err != nil {
 		return err
 	}
@@ -58,23 +58,13 @@ func (s *Store) GetThreadBySlug(slug string) (*model.Thread, error) {
 }
 
 func (s *Store) InsertNPostsDB(in *model.Posts, position int, Ncount int, createTime time.Time, threadId int, forumSlug string) error {
-	//N := 10
 	query := "INSERT INTO posts (parent, author, message, forum, isedited, thread, created) VALUES "
 	args := make([]interface{}, 0, 0)
-
 	j := 0
-
-	// log.Println("222", &in)
-	// for _, post := range *in {
-	// 	log.Println("on enter2", post)
-	// 	//posts = append(posts, &post)
-	// }
 	for i := position; i < position+Ncount; i++ {
 		(*in)[i].Forum = forumSlug
 		(*in)[i].Thread = threadId
 		(*in)[i].Created = createTime.Format(time.RFC3339)
-		//createdFormatted := (*in)[i].Created.Format(time.RFC3339)
-		//log.Println(j, (*in)[i])
 		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d),", j*7+1, j*7+2, j*7+3, j*7+4, j*7+5, j*7+6, j*7+7)
 		if (*in)[i].Parent != 0 {
 			args = append(args, (*in)[i].Parent, (*in)[i].Author, (*in)[i].Message, (*in)[i].Forum, (*in)[i].IsEdited, (*in)[i].Thread, (*in)[i].Created)
@@ -92,7 +82,6 @@ func (s *Store) InsertNPostsDB(in *model.Posts, position int, Ncount int, create
 		return err
 	}
 	defer resultRows.Close()
-
 	for i := position; resultRows.Next(); i++ {
 		var id int
 		if err = resultRows.Scan(&id); err != nil {
@@ -100,55 +89,12 @@ func (s *Store) InsertNPostsDB(in *model.Posts, position int, Ncount int, create
 		}
 		(*in)[i].Id = id
 	}
-
 	return nil
-
-	// var err error
-	// posts := []*model.Post{}
-	// //createTime := time.Now()
-	// //createdFormatted := createTime.Format(time.RFC3339)
-	// dbCreatedTime := time.Now()
-	// for _, post := range *in {
-	// 	id := 0
-	// 	insertModel := model.Post{Parent: post.Parent, Author: post.Author, Message: post.Message, IsEdited: false, Thread: threadId, Forum: forumSlug, Created: createTime}
-	// 	err = s.db.QueryRow(`INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id, &dbCreatedTime)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	insertModel.Id = id
-	// 	insertModel.Created = dbCreatedTime
-	// 	posts = append(posts, &insertModel)
-	// }
-	// _, err = s.db.Exec(`UPDATE forums SET posts = posts + $1 WHERE LOWER(slug) = LOWER($2);`, len(*in), forumSlug)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return posts, nil
 }
 
 func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) (*model.Posts, error) {
 	var err error
-	// posts := []*model.Post{}
-	// for _, post := range *in {
-	// 	log.Println("on enter", post)
-	// 	posts = append(posts, &post)
-	// }
-	//log.Println("1", &posts)
 	createTime := time.Now()
-	//createdFormatted := createTime.Format(time.RFC3339)
-	//dbCreatedTime := time.Now()
-
-	// for _, post := range *in {
-	// 	id := 0
-	// 	insertModel := model.Post{Parent: post.Parent, Author: post.Author, Message: post.Message, IsEdited: false, Thread: threadId, Forum: forumSlug, Created: createTime}
-	// 	err = s.db.QueryRow(`INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id, &dbCreatedTime)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	insertModel.Id = id
-	// 	insertModel.Created = dbCreatedTime
-	// 	posts = append(posts, &insertModel)
-	// }
 	postsForOneInsert := 20
 	parts := len(*in) / postsForOneInsert
 	for i := 0; i < parts+1; i++ {
@@ -160,7 +106,6 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) (*m
 				}
 			}
 		} else {
-			//err = s.createPartPosts(thread, posts, i*postsForOneInsert, i*postsForOneInsert+postsForOneInsert, created, createdFormatted)
 			err = s.InsertNPostsDB(in, i*postsForOneInsert, postsForOneInsert, createTime, threadId, forumSlug)
 			if err != nil {
 				return nil, err
@@ -171,14 +116,6 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) (*m
 	if err != nil {
 		return nil, err
 	}
-	//posts := []*model.Post{}
-	// for _, post := range *in {
-	// 	log.Println("on enter", post)
-	// 	posts = append(posts, &post)
-	// }
-	// for i := 0; i < len(*in); i++ {
-	// 	posts = append(posts, &(*in)[i])
-	// }
 	return in, nil
 }
 
