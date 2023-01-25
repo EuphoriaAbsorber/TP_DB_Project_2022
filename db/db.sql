@@ -39,8 +39,11 @@ CREATE UNLOGGED TABLE posts (
 CREATE UNLOGGED TABLE votes (
     nickname  TEXT NOT NULL REFERENCES users (nickname) ON DELETE CASCADE,
     thread    INT    NOT NULL REFERENCES threads (id) ON DELETE CASCADE,
-    voice     INT    NOT NULL
+    voice     INT    NOT NULL,
+    CONSTRAINT vote_key UNIQUE (nickname, thread)
 );
+
+--TRIGGERS
 
 CREATE OR REPLACE FUNCTION post_set_path()
     RETURNS TRIGGER AS
@@ -57,3 +60,8 @@ CREATE TRIGGER insert_post
     FOR EACH ROW
     EXECUTE PROCEDURE post_set_path();
 
+
+
+--INDEXES
+
+CREATE UNIQUE INDEX IF NOT EXISTS votes_key ON votes (thread, nickname);

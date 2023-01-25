@@ -155,7 +155,7 @@ func (api *Usecase) VoteForThread(in *model.Vote, id int, slug string) (*model.T
 		return nil, err
 	}
 	in.Nickname = user.Nickname
-	newRating, err := api.store.VoteForThread(in, thread.Id)
+	newRating, err := api.store.VoteForThread(in, thread.Id, thread.Votes)
 	if err != nil {
 		return nil, err
 	}

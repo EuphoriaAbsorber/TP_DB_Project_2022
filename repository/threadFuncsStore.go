@@ -88,33 +88,60 @@ func (s *Store) UpdateThreadInfo(in *model.ThreadUpdate, id int) error {
 	return nil
 }
 
-func (s *Store) VoteForThread(in *model.Vote, threadID int) (int, error) {
-	count := 0
-	err := s.db.QueryRow(`SELECT count(*) FROM votes WHERE thread = $1 AND nickname = $2;`, threadID, in.Nickname).Scan(&count)
+func (s *Store) VoteForThread(in *model.Vote, threadID int, threadVotes int) (int, error) {
+
+	// count := 0
+	// err := s.db.QueryRow(`SELECT count(*) FROM votes WHERE thread = $1 AND nickname = $2;`, threadID, in.Nickname).Scan(&count)
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// if count == 0 {
+	// 	_, err := s.db.Exec(`INSERT INTO votes (nickname, thread, voice) VALUES ($1, $2, $3);`, in.Nickname, threadID, in.Voice)
+	// 	if err != nil {
+	// 		return 0, err
+	// 	}
+	// } else {
+	// 	_, err := s.db.Exec(`UPDATE votes SET voice = $1 WHERE nickname = $2 AND thread = $3;`, in.Voice, in.Nickname, threadID)
+	// 	if err != nil {
+	// 		return 0, err
+	// 	}
+	// }
+	oldVote := 0
+
+	rows, err := s.db.Query(`SELECT voice FROM votes WHERE thread = $1 AND nickname = $2;`, threadID, in.Nickname)
 	if err != nil {
 		return 0, err
 	}
-	if count == 0 {
-		_, err := s.db.Exec(`INSERT INTO votes (nickname, thread, voice) VALUES ($1, $2, $3);`, in.Nickname, threadID, in.Voice)
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&oldVote)
 		if err != nil {
 			return 0, err
 		}
-	} else {
-		_, err := s.db.Exec(`UPDATE votes SET voice = $1 WHERE nickname = $2 AND thread = $3;`, in.Voice, in.Nickname, threadID)
+	}
+
+	// err := s.db.QueryRow(`SELECT voice FROM votes WHERE thread = $1 AND nickname = $2;`, threadID, in.Nickname).Scan(&oldVote)
+	// if err != nil {
+	// 	return 0, err
+	// }
+	newVote := 0
+	err = s.db.QueryRow(`INSERT INTO votes (nickname, thread, voice) VALUES ($1, $2, $3) ON CONFLICT (nickname, thread) DO UPDATE SET voice = EXCLUDED.voice RETURNING voice;`, in.Nickname, threadID, in.Voice).Scan(&newVote)
+	if err != nil {
+		return 0, err
+	}
+	//newRate := 0
+	// err = s.db.QueryRow(`SELECT sum(voice) FROM votes WHERE thread = $1;`, threadID).Scan(&newRate)
+	// if err != nil {
+	// 	return 0, err
+	// }
+	if oldVote != newVote {
+		err = s.db.QueryRow(`UPDATE threads SET votes = votes - $1 + $2 WHERE id = $3 RETURNING votes;`, oldVote, newVote, threadID).Scan(&threadVotes)
 		if err != nil {
 			return 0, err
 		}
 	}
-	newRate := 0
-	err = s.db.QueryRow(`SELECT sum(voice) FROM votes WHERE thread = $1;`, threadID).Scan(&newRate)
-	if err != nil {
-		return 0, err
-	}
-	_, err = s.db.Exec(`UPDATE threads SET votes = $1 WHERE id = $2;`, newRate, threadID)
-	if err != nil {
-		return 0, err
-	}
-	return newRate, nil
+
+	return threadVotes, nil
 }
 
 func (s *Store) GetThreadPostsFlatSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error) {
