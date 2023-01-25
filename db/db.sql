@@ -26,7 +26,7 @@ CREATE UNLOGGED TABLE threads (
 
 CREATE UNLOGGED TABLE posts (
     id  SERIAL PRIMARY KEY,
-    parent   INT REFERENCES posts (id),
+    parent   INT,
     author   TEXT NOT NULL REFERENCES users (nickname) ON DELETE CASCADE,
     message  TEXT NOT NULL,
     forum    TEXT NOT NULL REFERENCES forums (slug) ON DELETE CASCADE,
