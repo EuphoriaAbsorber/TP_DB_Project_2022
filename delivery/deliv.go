@@ -36,7 +36,6 @@ func NewHandler(uc usecase.UsecaseInterface) *Handler {
 func ReturnErrorJSON(w http.ResponseWriter, err error, errCode int) {
 	w.WriteHeader(errCode)
 	json.NewEncoder(w).Encode(&model.Error{Error: err.Error()})
-	return
 }
 
 // GetServiceStatus godoc

@@ -26,12 +26,14 @@ func (s *Store) GetThreadById(id int) (*model.Thread, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	dat := model.Thread{}
 	for rows.Next() {
-		dat := model.Thread{}
 		err := rows.Scan(&dat.Id, &dat.Title, &dat.Author, &dat.Forum, &dat.Message, &dat.Votes, &dat.Slug, &dat.Created)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if dat.Id != 0 {
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
@@ -46,12 +48,14 @@ func (s *Store) GetThreadBySlug(slug string) (*model.Thread, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	dat := model.Thread{}
 	for rows.Next() {
-		dat := model.Thread{}
 		err := rows.Scan(&dat.Id, &dat.Title, &dat.Author, &dat.Forum, &dat.Message, &dat.Votes, &dat.Slug, &dat.Created)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if dat.Id != 0 {
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
@@ -59,7 +63,7 @@ func (s *Store) GetThreadBySlug(slug string) (*model.Thread, error) {
 
 func (s *Store) InsertNPostsDB(in *model.Posts, position int, Ncount int, createTime time.Time, threadId int, forumSlug string) error {
 	query := "INSERT INTO posts (parent, author, message, forum, isedited, thread, created) VALUES "
-	args := make([]interface{}, 0, 0)
+	args := make([]interface{}, 0)
 	j := 0
 	for i := position; i < position+Ncount; i++ {
 		(*in)[i].Forum = forumSlug

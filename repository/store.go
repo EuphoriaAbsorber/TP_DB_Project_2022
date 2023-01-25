@@ -75,12 +75,14 @@ func (s *Store) GetProfile(nickname string) (*model.User, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	dat := model.User{}
 	for rows.Next() {
-		dat := model.User{}
 		err := rows.Scan(&dat.Email, &dat.Fullname, &dat.Nickname, &dat.About)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if dat.Email != "" {
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
@@ -107,12 +109,14 @@ func (s *Store) GetForumByUsername(nickname string) (*model.Forum, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	dat := model.Forum{}
 	for rows.Next() {
-		dat := model.Forum{}
 		err := rows.Scan(&dat.Title, &dat.User, &dat.Slug, &dat.Posts, &dat.Threads)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if dat.Slug != "" {
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
@@ -124,12 +128,14 @@ func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	dat := model.Forum{}
 	for rows.Next() {
-		dat := model.Forum{}
 		err := rows.Scan(&dat.Title, &dat.User, &dat.Slug, &dat.Posts, &dat.Threads)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if dat.Slug != "" {
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
@@ -151,10 +157,14 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 
 func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error) {
 	users := []*model.User{}
-	rows, err := s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON LOWER(users.nickname)=LOWER(posts.author) WHERE LOWER(posts.forum) = LOWER($1)
+	var rows *pgx.Rows
+	var err error
+	if !desc {
+		rows, err = s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON LOWER(users.nickname)=LOWER(posts.author) WHERE LOWER(posts.forum) = LOWER($1)
 		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON LOWER(users.nickname)=LOWER(threads.author) WHERE LOWER(threads.forum) = LOWER($1)) AS U WHERE LOWER(U.nickname) > LOWER($2) ORDER BY LOWER(U.nickname) ASC LIMIT $3;`, slug, since, limit)
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 	if desc {
 		if since == "" {
@@ -180,11 +190,15 @@ func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) (
 
 func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error) {
 	threads := []*model.Thread{}
-
-	rows, err := s.db.Query(`SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(forum) = LOWER($1) AND created >= $2 ORDER BY created ASC LIMIT $3;`, slug, since, limit)
-	if err != nil {
-		return nil, err
+	var rows *pgx.Rows
+	var err error
+	if !desc {
+		rows, err = s.db.Query(`SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(forum) = LOWER($1) AND created >= $2 ORDER BY created ASC LIMIT $3;`, slug, since, limit)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	if desc {
 		if since.Format("0000-01-01T00:00:00.000Z") == "0000-01-01T00:00:00.000Z" {
 			since, err = time.Parse(time.RFC3339, "5000-01-01T00:00:00.000Z")
@@ -215,14 +229,16 @@ func (s *Store) GetPostById(id int) (*model.Post, error) {
 		return nil, err
 	}
 	defer rows.Close()
+	dat := model.Post{}
 	for rows.Next() {
-		dat := model.Post{}
 		date := time.Now()
 		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.IsEdited, &dat.Thread, &date)
 		dat.Created = date.Format(time.RFC3339)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if dat.Id != 0 {
 		return &dat, nil
 	}
 	return nil, model.ErrNotFound404
@@ -251,6 +267,7 @@ func (s *Store) GetServiceStatus() (*model.Status, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&status.User, &status.Forum, &status.Thread, &status.Post)
 		if err != nil {
