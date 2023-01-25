@@ -103,25 +103,44 @@ func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) (*model.Po
 	if err != nil {
 		return nil, err
 	}
-	parentPostsNumbers := make([]int, 0)
-	m := make(map[int]bool)
-	for _, post := range *in {
-		if _, ok := m[post.Parent]; !ok {
-			m[post.Parent] = true
-			if post.Parent != 0 {
-				parentPostsNumbers = append(parentPostsNumbers, post.Parent)
-			}
-		}
-		user, err := api.store.GetProfile(post.Author)
-		if err != nil {
-			return nil, err
-		}
-		post.Author = user.Nickname
+	// parentPostsNumbers := make([]int, 0)
+	// m := make(map[int]bool)
+	// for _, post := range *in {
+	// 	if _, ok := m[post.Parent]; !ok {
+	// 		m[post.Parent] = true
+	// 		if post.Parent != 0 {
+	// 			parentPostsNumbers = append(parentPostsNumbers, post.Parent)
+	// 		}
+	// 	}
+	// 	user, err := api.store.GetProfile(post.Author)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	post.Author = user.Nickname
+	// }
+	// err = api.store.CheckAllPostParentIds(thread.Id, parentPostsNumbers)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	if len(*in) == 0 {
+		return &model.Posts{}, nil
 	}
-	err = api.store.CheckAllPostParentIds(thread.Id, parentPostsNumbers)
+	if (*in)[0].Parent != 0 {
+		//var parentPost *model.Post
+		parentPost, err := api.store.GetPostById((*in)[0].Parent)
+		if err != nil {
+			return nil, model.ErrConflict409
+		}
+		if parentPost.Thread != thread.Id {
+			return nil, model.ErrConflict409
+		}
+	}
+	user, err := api.store.GetProfile((*in)[0].Author)
 	if err != nil {
 		return nil, err
 	}
+	(*in)[0].Author = user.Nickname
+
 	return api.store.CreatePosts(in, thread.Id, thread.Forum)
 }
 

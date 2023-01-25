@@ -53,7 +53,7 @@ func (s *Store) CreateUser(in *model.User) error {
 }
 func (s *Store) GetUsersByUsermodel(in *model.User) ([]*model.User, error) {
 	users := []*model.User{}
-	rows, err := s.db.Query(`SELECT email, fullname, nickname, about FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(nickname) = LOWER($2);`, in.Email, in.Nickname)
+	rows, err := s.db.Query(`SELECT email, fullname, nickname, about FROM users WHERE LOWER(nickname) = LOWER($1) OR LOWER(email) = LOWER($2);`, in.Nickname, in.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (s *Store) GetForumThreads(slug string, limit int, since time.Time, desc bo
 }
 
 func (s *Store) GetPostById(id int) (*model.Post, error) {
-	rows, err := s.db.Query(`SELECT id, parent, author, message, forum, isedited, thread, created FROM posts WHERE id = $1;`, id)
+	rows, err := s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE id = $1;`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -232,8 +232,12 @@ func (s *Store) GetPostById(id int) (*model.Post, error) {
 	dat := model.Post{}
 	for rows.Next() {
 		date := time.Now()
-		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.IsEdited, &dat.Thread, &date)
+		var parent *int
+		err = rows.Scan(&dat.Id, &parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &date)
 		dat.Created = date.Format(time.RFC3339)
+		if parent != nil {
+			dat.Parent = *parent
+		}
 		if err != nil {
 			return nil, err
 		}

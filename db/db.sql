@@ -26,7 +26,7 @@ CREATE UNLOGGED TABLE threads (
 
 CREATE UNLOGGED TABLE posts (
     id  SERIAL PRIMARY KEY,
-    parent   INT DEFAULT 0,
+    parent   INT REFERENCES posts (id),
     author   TEXT NOT NULL REFERENCES users (nickname) ON DELETE CASCADE,
     message  TEXT NOT NULL,
     forum    TEXT NOT NULL REFERENCES forums (slug) ON DELETE CASCADE,
@@ -70,6 +70,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS votes_key ON votes (thread, nickname);
 
 CREATE INDEX IF NOT EXISTS threads_created ON threads (created);
 CREATE INDEX IF NOT EXISTS threads_slug ON threads (lower(slug));
+
+CREATE INDEX IF NOT EXISTS forums_slug ON forums (lower(slug));
+CREATE INDEX IF NOT EXISTS forums_user ON forums (lower(user1));
 
 CREATE INDEX IF NOT EXISTS users_nickname ON users (lower(nickname));
 

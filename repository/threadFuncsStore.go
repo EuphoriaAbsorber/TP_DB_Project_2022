@@ -66,6 +66,11 @@ func (s *Store) InsertNPostsDB(in *model.Posts, position int, Ncount int, create
 	args := make([]interface{}, 0)
 	j := 0
 	for i := position; i < position+Ncount; i++ {
+		user, err := s.GetProfile((*in)[i].Author)
+		if err != nil {
+			return err
+		}
+		(*in)[i].Author = user.Nickname
 		(*in)[i].Forum = forumSlug
 		(*in)[i].Thread = threadId
 		(*in)[i].Created = createTime.Format(time.RFC3339)
@@ -73,7 +78,7 @@ func (s *Store) InsertNPostsDB(in *model.Posts, position int, Ncount int, create
 		if (*in)[i].Parent != 0 {
 			args = append(args, (*in)[i].Parent, (*in)[i].Author, (*in)[i].Message, (*in)[i].Forum, (*in)[i].IsEdited, (*in)[i].Thread, (*in)[i].Created)
 		} else {
-			args = append(args, 0, (*in)[i].Author, (*in)[i].Message, (*in)[i].Forum, (*in)[i].IsEdited, (*in)[i].Thread, (*in)[i].Created)
+			args = append(args, nil, (*in)[i].Author, (*in)[i].Message, (*in)[i].Forum, (*in)[i].IsEdited, (*in)[i].Thread, (*in)[i].Created)
 		}
 		j++
 	}
@@ -83,7 +88,7 @@ func (s *Store) InsertNPostsDB(in *model.Posts, position int, Ncount int, create
 
 	resultRows, err := s.db.Query(query, args...)
 	if err != nil {
-		return err
+		return model.ErrConflict409
 	}
 	defer resultRows.Close()
 	for i := position; resultRows.Next(); i++ {
@@ -178,8 +183,12 @@ func (s *Store) GetThreadPostsFlatSort(threadId int, limit int, since int, desc 
 	for rows.Next() {
 		dat := model.Post{}
 		date := time.Now()
-		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &date)
+		var parent *int
+		err := rows.Scan(&dat.Id, &parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &date)
 		dat.Created = date.Format(time.RFC3339)
+		if parent != nil {
+			dat.Parent = *parent
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -214,10 +223,11 @@ func (s *Store) GetThreadPostsTreeSort(threadId int, limit int, since int, desc 
 	for rows.Next() {
 		dat := model.Post{}
 		date := time.Now()
-		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &date)
+		var parent *int
+		err = rows.Scan(&dat.Id, &parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &date)
 		dat.Created = date.Format(time.RFC3339)
-		if err != nil {
-			return nil, err
+		if parent != nil {
+			dat.Parent = *parent
 		}
 		posts = append(posts, &dat)
 	}
@@ -230,16 +240,16 @@ func (s *Store) GetThreadPostsTreeParentSort(threadId int, limit int, since int,
 	var err error
 	if !desc {
 		if since == 0 {
-			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent  = 0 ORDER BY id LIMIT $2) ORDER BY path;`, threadId, limit)
+			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent IS NULL ORDER BY id LIMIT $2) ORDER BY path;`, threadId, limit)
 		} else {
-			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent  = 0 AND path[1] > (SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT $3) ORDER BY path;`, threadId, since, limit)
+			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent IS NULL AND path[1] > (SELECT path[1] FROM posts WHERE id = $2) ORDER BY id LIMIT $3) ORDER BY path;`, threadId, since, limit)
 		}
 	}
 	if desc {
 		if since == 0 {
-			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent = 0 ORDER BY id DESC LIMIT $2) ORDER BY path[1] DESC, path ASC, id ASC;`, threadId, limit)
+			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent IS NULL ORDER BY id DESC LIMIT $2) ORDER BY path[1] DESC, path ASC, id ASC;`, threadId, limit)
 		} else {
-			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent  = 0 AND path[1] < (SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT $3) ORDER BY path[1] DESC, path ASC, id ASC;`, threadId, since, limit)
+			rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE path[1] IN (SELECT id FROM posts WHERE thread = $1 AND parent IS NULL AND path[1] < (SELECT path[1] FROM posts WHERE id = $2) ORDER BY id DESC LIMIT $3) ORDER BY path[1] DESC, path ASC, id ASC;`, threadId, since, limit)
 		}
 	}
 	if err != nil {
@@ -249,10 +259,11 @@ func (s *Store) GetThreadPostsTreeParentSort(threadId int, limit int, since int,
 	for rows.Next() {
 		dat := model.Post{}
 		date := time.Now()
-		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &date)
+		var parent *int
+		err = rows.Scan(&dat.Id, &parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &date)
 		dat.Created = date.Format(time.RFC3339)
-		if err != nil {
-			return nil, err
+		if parent != nil {
+			dat.Parent = *parent
 		}
 		posts = append(posts, &dat)
 	}
