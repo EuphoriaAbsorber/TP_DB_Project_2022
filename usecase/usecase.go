@@ -22,7 +22,7 @@ type UsecaseInterface interface {
 	GetServiceStatus() (*model.Status, error)
 	ServiceClear() error
 	GetThread(id int, slug string) (*model.Thread, error)
-	CreatePosts(in *model.Posts, id int, slug string) (*model.Posts, error)
+	CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error)
 	UpdateThreadInfo(in *model.ThreadUpdate, id int, slug string) (*model.Thread, error)
 	VoteForThread(in *model.Vote, id int, slug string) (*model.Thread, error)
 	GetThreadPosts(slug string, id int, limit int, since int, sort string, desc bool) ([]*model.Post, error)
@@ -98,7 +98,7 @@ func (api *Usecase) GetThread(id int, slug string) (*model.Thread, error) {
 	return thread, nil
 }
 
-func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) (*model.Posts, error) {
+func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error) {
 	thread, err := api.GetThread(id, slug)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,8 @@ func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) (*model.Po
 	// 	return nil, err
 	// }
 	if len(*in) == 0 {
-		return &model.Posts{}, nil
+		empty := []*model.Post{}
+		return empty, nil
 	}
 	if (*in)[0].Parent != 0 {
 		//var parentPost *model.Post
