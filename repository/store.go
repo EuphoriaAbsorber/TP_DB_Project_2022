@@ -26,7 +26,7 @@ type StoreInterface interface {
 	CheckAllPostParentIds(threadId int, in []int) error
 	GetThreadById(id int) (*model.Thread, error)
 	GetThreadBySlug(slug string) (*model.Thread, error)
-	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
+	CreatePosts(in *model.Posts, threadId int, forumSlug string) (*model.Posts, error)
 	UpdateThreadInfo(in *model.ThreadUpdate, id int) error
 	VoteForThread(in *model.Vote, threadID int, threadVotes int) (int, error)
 	GetThreadPostsFlatSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error)
@@ -217,7 +217,9 @@ func (s *Store) GetPostById(id int) (*model.Post, error) {
 	defer rows.Close()
 	for rows.Next() {
 		dat := model.Post{}
-		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.IsEdited, &dat.Thread, &dat.Created)
+		date := time.Now()
+		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.IsEdited, &dat.Thread, &date)
+		dat.Created = date.Format(time.RFC3339)
 		if err != nil {
 			return nil, err
 		}

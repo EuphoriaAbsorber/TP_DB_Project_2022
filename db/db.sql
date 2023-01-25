@@ -26,7 +26,7 @@ CREATE UNLOGGED TABLE threads (
 
 CREATE UNLOGGED TABLE posts (
     id  SERIAL PRIMARY KEY,
-    parent   INT,
+    parent   INT DEFAULT 0,
     author   TEXT NOT NULL REFERENCES users (nickname) ON DELETE CASCADE,
     message  TEXT NOT NULL,
     forum    TEXT NOT NULL REFERENCES forums (slug) ON DELETE CASCADE,
@@ -48,6 +48,8 @@ CREATE UNLOGGED TABLE votes (
 CREATE OR REPLACE FUNCTION post_set_path()
     RETURNS TRIGGER AS
 $$
+DECLARE
+parent_post_id posts.id%type := 0;
 BEGIN
     NEW.path = (SELECT path FROM posts WHERE id = NEW.parent) || NEW.id;
 RETURN NEW;

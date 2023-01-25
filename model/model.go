@@ -74,14 +74,14 @@ type ThreadUpdate struct {
 }
 
 type Post struct {
-	Id       int       `json:"id,omitempty"`
-	Parent   int       `json:"parent"`
-	Author   string    `json:"author"`
-	Message  string    `json:"message"`
-	IsEdited bool      `json:"isEdited"`
-	Forum    string    `json:"forum,omitempty"`
-	Thread   int       `json:"thread,omitempty"`
-	Created  time.Time `json:"created"`
+	Id       int    `json:"id,omitempty"`
+	Parent   int    `json:"parent"`
+	Author   string `json:"author"`
+	Message  string `json:"message"`
+	IsEdited bool   `json:"isEdited"`
+	Forum    string `json:"forum,omitempty"`
+	Thread   int    `json:"thread,omitempty"`
+	Created  string `json:"created"`
 }
 
 type Posts []Post
