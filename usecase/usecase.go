@@ -170,5 +170,8 @@ func (api *Usecase) GetThreadPosts(slug string, id int, limit int, since int, so
 	if sort == "tree" {
 		return api.store.GetThreadPostsTreeSort(thread.Id, limit, since, desc)
 	}
+	if sort == "parent_tree" {
+		return api.store.GetThreadPostsTreeParentSort(thread.Id, limit, since, desc)
+	}
 	return api.store.GetThreadPostsFlatSort(thread.Id, limit, since, desc)
 }

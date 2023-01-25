@@ -57,7 +57,7 @@ func (s *Store) GetThreadBySlug(slug string) (*model.Thread, error) {
 }
 
 func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error) {
-
+	var err error
 	posts := []*model.Post{}
 	createTime := time.Now()
 	createdFormatted := createTime.Format(time.RFC3339)
@@ -65,7 +65,11 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]
 	for _, post := range *in {
 		id := 0
 		insertModel := model.Post{Parent: post.Parent, Author: post.Author, Message: post.Message, IsEdited: false, Thread: threadId, Forum: forumSlug, Created: createTime}
-		err := s.db.QueryRow(`INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id, &dbCreatedTime)
+		if post.Parent == 0 {
+			err = s.db.QueryRow(`INSERT INTO posts (author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created;`, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id, &dbCreatedTime)
+		} else {
+			err = s.db.QueryRow(`INSERT INTO posts (parent, author, message, forum, thread, isedited, created) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created;`, insertModel.Parent, insertModel.Author, insertModel.Message, insertModel.Forum, insertModel.Thread, insertModel.IsEdited, createdFormatted).Scan(&id, &dbCreatedTime)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +77,7 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]
 		insertModel.Created = dbCreatedTime
 		posts = append(posts, &insertModel)
 	}
-	_, err := s.db.Exec(`UPDATE forums SET posts = posts + $1 WHERE LOWER(slug) = LOWER($2);`, len(*in), forumSlug)
+	_, err = s.db.Exec(`UPDATE forums SET posts = posts + $1 WHERE LOWER(slug) = LOWER($2);`, len(*in), forumSlug)
 	if err != nil {
 		return nil, err
 	}
@@ -119,10 +123,10 @@ func (s *Store) VoteForThread(in *model.Vote, threadID int) (int, error) {
 
 func (s *Store) GetThreadPostsFlatSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error) {
 	posts := []*model.Post{}
-
-	rows, err := s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND id > $2 ORDER BY (created, id) LIMIT $3;`, threadId, since, limit)
-	if err != nil {
-		return nil, err
+	var rows *pgx.Rows
+	var err error
+	if !desc {
+		rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND id > $2 ORDER BY (created, id) LIMIT $3;`, threadId, since, limit)
 	}
 	if desc {
 		if since == 0 {
@@ -150,16 +154,72 @@ func (s *Store) GetThreadPostsTreeSort(threadId int, limit int, since int, desc 
 	var rows *pgx.Rows
 	var err error
 
-	if since == 0 {
-		rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 ORDER BY path LIMIT $2;`, threadId, limit)
-	} else {
-		rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND path > (SELECT path FROM posts WHERE id = $2) ORDER BY path LIMIT $3;`, threadId, since, limit)
+	if !desc {
+		if since == 0 {
+			rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 ORDER BY path LIMIT $2;`, threadId, limit)
+		} else {
+			rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND path > (SELECT path FROM posts WHERE id = $2) ORDER BY path LIMIT $3;`, threadId, since, limit)
+		}
 	}
 	if desc {
 		if since == 0 {
 			rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 ORDER BY path DESC LIMIT $2;`, threadId, limit)
 		} else {
 			rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND path < (SELECT path FROM posts WHERE id = $2) ORDER BY path DESC LIMIT $3;`, threadId, since, limit)
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.Post{}
+		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &dat.Created)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, &dat)
+	}
+	return posts, nil
+}
+
+func (s *Store) GetThreadPostsTreeParentSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error) {
+	posts := []*model.Post{}
+	var rows *pgx.Rows
+	var err error
+	if !desc {
+		if since == 0 {
+			rows, err = s.db.Query(`
+		SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts 
+		WHERE path[1] IN 
+			(SELECT id FROM posts WHERE thread = $1 AND parent IS NULL ORDER BY id LIMIT $2) 
+		ORDER BY path;`, threadId, limit)
+		} else {
+			rows, err = s.db.Query(`
+		SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts 
+		WHERE path[1] IN 
+			(SELECT id FROM posts WHERE thread = $1 AND parent IS NULL AND path[1] > 
+				 (SELECT path[1] FROM posts WHERE id = $2) 
+			ORDER BY id LIMIT $3) 
+		ORDER BY path;`, threadId, since, limit)
+		}
+	}
+
+	if desc {
+		if since == 0 {
+			rows, err = s.db.Query(`
+			SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts
+			WHERE path[1] IN 
+				(SELECT id FROM posts WHERE thread = $1 AND parent IS NULL ORDER BY id DESC LIMIT $2)
+			ORDER BY path[1] DESC, path ASC, id ASC;`, threadId, limit)
+		} else {
+			rows, err = s.db.Query(`
+			SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts 
+			WHERE path[1] IN 
+				(SELECT id FROM posts WHERE thread = $1 AND parent IS NULL AND path[1] < 
+					 (SELECT path[1] FROM posts WHERE id = $2) 
+				ORDER BY id DESC LIMIT $3) 
+			ORDER BY path[1] DESC, path ASC, id ASC;`, threadId, since, limit)
 		}
 	}
 	if err != nil {

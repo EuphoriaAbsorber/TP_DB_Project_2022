@@ -31,6 +31,7 @@ type StoreInterface interface {
 	VoteForThread(in *model.Vote, threadID int) (int, error)
 	GetThreadPostsFlatSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error)
 	GetThreadPostsTreeSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error)
+	GetThreadPostsTreeParentSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error)
 }
 
 type Store struct {
