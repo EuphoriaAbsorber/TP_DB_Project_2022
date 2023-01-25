@@ -31,3 +31,4 @@ CMD service postgresql start && psql -h localhost -d dbproject_base -U art -p 54
 #docker build -t art .
 #docker run -p 5000:5000 --name art -t art
 #./technopark-dbms-forum func -u http://localhost:5000/api -r report.html -k
+#docker run -d --memory 2G --log-opt max-size=5M --log-opt max-file=3 --name art -p 5000:5000 art
