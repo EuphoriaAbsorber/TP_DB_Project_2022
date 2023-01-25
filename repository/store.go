@@ -26,8 +26,8 @@ type StoreInterface interface {
 	CheckAllPostParentIds(threadId int, in []int) error
 	GetThreadById(id int) (*model.Thread, error)
 	GetThreadBySlug(slug string) (*model.Thread, error)
-	//CreatePosts(in *model.Posts, threadId int, forumSlug string) (*model.Posts, error)
-	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
+	CreatePosts(in *model.Posts, threadId int, forumSlug string) (*model.Posts, error)
+	//CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
 	UpdateThreadInfo(in *model.ThreadUpdate, id int) error
 	VoteForThread(in *model.Vote, threadID int, threadVotes int) (int, error)
 	GetThreadPostsFlatSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error)

@@ -22,7 +22,8 @@ type UsecaseInterface interface {
 	GetServiceStatus() (*model.Status, error)
 	ServiceClear() error
 	GetThread(id int, slug string) (*model.Thread, error)
-	CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error)
+	//CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error)
+	CreatePosts(in *model.Posts, id int, slug string) (*model.Posts, error)
 	UpdateThreadInfo(in *model.ThreadUpdate, id int, slug string) (*model.Thread, error)
 	VoteForThread(in *model.Vote, id int, slug string) (*model.Thread, error)
 	GetThreadPosts(slug string, id int, limit int, since int, sort string, desc bool) ([]*model.Post, error)
@@ -98,36 +99,17 @@ func (api *Usecase) GetThread(id int, slug string) (*model.Thread, error) {
 	return thread, nil
 }
 
-func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) ([]*model.Post, error) {
+func (api *Usecase) CreatePosts(in *model.Posts, id int, slug string) (*model.Posts, error) {
 	thread, err := api.GetThread(id, slug)
 	if err != nil {
 		return nil, err
 	}
-	// parentPostsNumbers := make([]int, 0)
-	// m := make(map[int]bool)
-	// for _, post := range *in {
-	// 	if _, ok := m[post.Parent]; !ok {
-	// 		m[post.Parent] = true
-	// 		if post.Parent != 0 {
-	// 			parentPostsNumbers = append(parentPostsNumbers, post.Parent)
-	// 		}
-	// 	}
-	// 	user, err := api.store.GetProfile(post.Author)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	post.Author = user.Nickname
-	// }
-	// err = api.store.CheckAllPostParentIds(thread.Id, parentPostsNumbers)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	if len(*in) == 0 {
-		empty := []*model.Post{}
-		return empty, nil
+		//empty := []*model.Post{}
+		//return empty, nil
+		return in, nil
 	}
 	if (*in)[0].Parent != 0 {
-		//var parentPost *model.Post
 		parentPost, err := api.store.GetPostById((*in)[0].Parent)
 		if err != nil {
 			return nil, model.ErrConflict409
