@@ -990,7 +990,7 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "isedited": {
+                "isEdited": {
                     "type": "boolean"
                 },
                 "message": {

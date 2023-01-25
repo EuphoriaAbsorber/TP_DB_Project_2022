@@ -151,7 +151,7 @@ func (api *Handler) CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.Author = user.Nickname
-	thread, err := api.usecase.GetThreadByModel(&req)
+	thread, err := api.usecase.GetThread(0, req.Slug)
 	if err != nil && err != model.ErrNotFound404 {
 		log.Println(err)
 		ReturnErrorJSON(w, model.ErrServerError500, 500)

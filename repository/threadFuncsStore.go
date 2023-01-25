@@ -3,6 +3,8 @@ package repository
 import (
 	"dbproject/model"
 	"time"
+
+	"github.com/jackc/pgx"
 )
 
 func (s *Store) CheckAllPostParentIds(threadId int, in []int) error {
@@ -35,6 +37,9 @@ func (s *Store) GetThreadById(id int) (*model.Thread, error) {
 }
 
 func (s *Store) GetThreadBySlug(slug string) (*model.Thread, error) {
+	if slug == "" {
+		return nil, nil
+	}
 	rows, err := s.db.Query(`SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(slug) = LOWER($1);`, slug)
 	if err != nil {
 		return nil, err
@@ -55,7 +60,6 @@ func (s *Store) CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]
 
 	posts := []*model.Post{}
 	createTime := time.Now()
-	//createdFormatted := createTime.Format("2022-06-27T02:03:37.007+03:00")
 	createdFormatted := createTime.Format(time.RFC3339)
 	dbCreatedTime := time.Now()
 	for _, post := range *in {
@@ -86,7 +90,7 @@ func (s *Store) UpdateThreadInfo(in *model.ThreadUpdate, id int) error {
 
 func (s *Store) VoteForThread(in *model.Vote, threadID int) (int, error) {
 	count := 0
-	err := s.db.QueryRow(`SELECT count(*) FROM (SELECT users.nickname FROM users JOIN votes on users.nickname=votes.nickname JOIN threads ON votes.thread=threads.id WHERE threads.id = $1) AS S WHERE S.nickname IN ($2);`, threadID, in.Nickname).Scan(&count)
+	err := s.db.QueryRow(`SELECT count(*) FROM votes WHERE thread = $1 AND nickname = $2;`, threadID, in.Nickname).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -113,10 +117,10 @@ func (s *Store) VoteForThread(in *model.Vote, threadID int) (int, error) {
 	return newRate, nil
 }
 
-func (s *Store) GetThreadPosts(threadId int, limit int, since int, sort string, desc bool) ([]*model.Post, error) {
+func (s *Store) GetThreadPostsFlatSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error) {
 	posts := []*model.Post{}
 
-	rows, err := s.db.Query(`SELECT posts.id, parent, posts.author, posts.message, posts.forum, posts.thread, isedited, posts.created FROM posts JOIN threads ON posts.thread = threads.id WHERE threads.id = $1 AND posts.id > $2 ORDER BY posts.created LIMIT $3;`, threadId, since, limit)
+	rows, err := s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND id > $2 ORDER BY (created, id) LIMIT $3;`, threadId, since, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +128,39 @@ func (s *Store) GetThreadPosts(threadId int, limit int, since int, sort string, 
 		if since == 0 {
 			since = 1e9
 		}
-		rows, err = s.db.Query(`SELECT posts.id, parent, posts.author, posts.message, posts.forum, posts.thread, isedited, posts.created FROM posts JOIN threads ON posts.thread = threads.id WHERE threads.id = $1 AND posts.id < $2 ORDER BY posts.created DESC LIMIT $3;`, threadId, since, limit)
+		rows, err = s.db.Query(`SELECT id, parent, author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND id < $2 ORDER BY (created, id) DESC LIMIT $3;`, threadId, since, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		dat := model.Post{}
+		err := rows.Scan(&dat.Id, &dat.Parent, &dat.Author, &dat.Message, &dat.Forum, &dat.Thread, &dat.IsEdited, &dat.Created)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, &dat)
+	}
+	return posts, nil
+}
+
+func (s *Store) GetThreadPostsTreeSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error) {
+	posts := []*model.Post{}
+	var rows *pgx.Rows
+	var err error
+
+	if since == 0 {
+		rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 ORDER BY path LIMIT $2;`, threadId, limit)
+	} else {
+		rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND path > (SELECT path FROM posts WHERE id = $2) ORDER BY path LIMIT $3;`, threadId, since, limit)
+	}
+	if desc {
+		if since == 0 {
+			rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 ORDER BY path DESC LIMIT $2;`, threadId, limit)
+		} else {
+			rows, err = s.db.Query(`SELECT id, COALESCE(parent, 0), author, message, forum, thread, isedited, created FROM posts WHERE thread = $1 AND path < (SELECT path FROM posts WHERE id = $2) ORDER BY path DESC LIMIT $3;`, threadId, since, limit)
+		}
 	}
 	if err != nil {
 		return nil, err

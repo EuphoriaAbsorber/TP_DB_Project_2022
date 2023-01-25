@@ -14,7 +14,6 @@ type UsecaseInterface interface {
 	CreateForum(params *model.Forum) error
 	GetForumByUsername(nickname string) (*model.Forum, error)
 	GetForumBySlug(slug string) (*model.Forum, error)
-	GetThreadByModel(params *model.Thread) (*model.Thread, error)
 	CreateThreadByModel(params *model.Thread) (*model.Thread, error)
 	GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error)
 	GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error)
@@ -59,9 +58,6 @@ func (api *Usecase) GetForumByUsername(nickname string) (*model.Forum, error) {
 }
 func (api *Usecase) GetForumBySlug(slug string) (*model.Forum, error) {
 	return api.store.GetForumBySlug(slug)
-}
-func (api *Usecase) GetThreadByModel(params *model.Thread) (*model.Thread, error) {
-	return api.store.GetThreadByModel(params)
 }
 func (api *Usecase) CreateThreadByModel(params *model.Thread) (*model.Thread, error) {
 	return api.store.CreateThreadByModel(params)
@@ -171,5 +167,8 @@ func (api *Usecase) GetThreadPosts(slug string, id int, limit int, since int, so
 	if err != nil {
 		return nil, err
 	}
-	return api.store.GetThreadPosts(thread.Id, limit, since, sort, desc)
+	if sort == "tree" {
+		return api.store.GetThreadPostsTreeSort(thread.Id, limit, since, desc)
+	}
+	return api.store.GetThreadPostsFlatSort(thread.Id, limit, since, desc)
 }

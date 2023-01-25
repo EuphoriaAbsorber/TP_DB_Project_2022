@@ -16,7 +16,6 @@ type StoreInterface interface {
 	CreateForum(in *model.Forum) error
 	GetForumByUsername(nickname string) (*model.Forum, error)
 	GetForumBySlug(slug string) (*model.Forum, error)
-	GetThreadByModel(in *model.Thread) (*model.Thread, error)
 	CreateThreadByModel(in *model.Thread) (*model.Thread, error)
 	GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error)
 	GetForumThreads(slug string, limit int, since time.Time, desc bool) ([]*model.Thread, error)
@@ -30,7 +29,8 @@ type StoreInterface interface {
 	CreatePosts(in *model.Posts, threadId int, forumSlug string) ([]*model.Post, error)
 	UpdateThreadInfo(in *model.ThreadUpdate, id int) error
 	VoteForThread(in *model.Vote, threadID int) (int, error)
-	GetThreadPosts(threadId int, limit int, since int, sort string, desc bool) ([]*model.Post, error)
+	GetThreadPostsFlatSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error)
+	GetThreadPostsTreeSort(threadId int, limit int, since int, desc bool) ([]*model.Post, error)
 }
 
 type Store struct {
@@ -126,26 +126,6 @@ func (s *Store) GetForumBySlug(slug string) (*model.Forum, error) {
 	for rows.Next() {
 		dat := model.Forum{}
 		err := rows.Scan(&dat.Title, &dat.User, &dat.Slug, &dat.Posts, &dat.Threads)
-		if err != nil {
-			return nil, err
-		}
-		return &dat, nil
-	}
-	return nil, model.ErrNotFound404
-}
-
-func (s *Store) GetThreadByModel(in *model.Thread) (*model.Thread, error) {
-	if in.Slug == "" {
-		return nil, nil
-	}
-	rows, err := s.db.Query(`SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE LOWER(slug) = LOWER($1);`, in.Slug)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		dat := model.Thread{}
-		err := rows.Scan(&dat.Id, &dat.Title, &dat.Author, &dat.Forum, &dat.Message, &dat.Votes, &dat.Slug, &dat.Created)
 		if err != nil {
 			return nil, err
 		}

@@ -36,7 +36,7 @@ definitions:
         type: string
       id:
         type: integer
-      isedited:
+      isEdited:
         type: boolean
       message:
         type: string
