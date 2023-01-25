@@ -171,7 +171,7 @@ func (s *Store) CreateThreadByModel(in *model.Thread) (*model.Thread, error) {
 func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) ([]*model.User, error) {
 	users := []*model.User{}
 	rows, err := s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON LOWER(users.nickname)=LOWER(posts.author) WHERE LOWER(posts.forum) = LOWER($1)
-		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON LOWER(users.nickname)=LOWER(threads.author) WHERE LOWER(threads.forum) = LOWER($1)) AS U WHERE U.nickname > $2 ORDER BY U.nickname ASC LIMIT $3;`, slug, since, limit)
+		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON LOWER(users.nickname)=LOWER(threads.author) WHERE LOWER(threads.forum) = LOWER($1)) AS U WHERE LOWER(U.nickname) > LOWER($2) ORDER BY LOWER(U.nickname) ASC LIMIT $3;`, slug, since, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (s *Store) GetForumUsers(slug string, limit int, since string, desc bool) (
 			since = "яяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяяя"
 		}
 		rows, err = s.db.Query(`SELECT * FROM (SELECT email, fullname, nickname, about FROM users JOIN posts ON LOWER(users.nickname)=LOWER(posts.author) WHERE LOWER(posts.forum) = LOWER($1)
-		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON LOWER(users.nickname)=LOWER(threads.author) WHERE LOWER(threads.forum) = LOWER($1)) AS U WHERE U.nickname < $2 ORDER BY U.nickname DESC LIMIT $3;`, slug, since, limit)
+		UNION SELECT email, fullname, nickname, about FROM users JOIN threads ON LOWER(users.nickname)=LOWER(threads.author) WHERE LOWER(threads.forum) = LOWER($1)) AS U WHERE LOWER(U.nickname) < LOWER($2) ORDER BY LOWER(U.nickname) DESC LIMIT $3;`, slug, since, limit)
 	}
 	if err != nil {
 		return nil, err

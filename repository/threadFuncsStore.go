@@ -7,7 +7,7 @@ import (
 
 func (s *Store) CheckAllPostParentIds(threadId int, in []int) error {
 	dbcount := 0
-	err := s.db.QueryRow(`SELECT count(*) FROM (SELECT parent FROM posts JOIN threads ON posts.thread = threads.id WHERE threads.id = $1 GROUP BY parent HAVING $2 @> array_agg(parent)) AS S;`, threadId, in).Scan(&dbcount)
+	err := s.db.QueryRow(`SELECT count(*) FROM (SELECT id FROM posts WHERE thread = $1 GROUP BY id HAVING $2 @> array_agg(id)) AS S;`, threadId, in).Scan(&dbcount)
 	if err != nil {
 		return err
 	}
